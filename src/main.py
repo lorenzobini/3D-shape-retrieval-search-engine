@@ -5,12 +5,13 @@ import OpenGL
 
 def main():
     shapes, shape_labels = import_data()
-
+    None
 
 def import_data():
     DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
 
-    DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep
+    # TODO: to import the entire dataset remove the '0' and the redundant os.sep
+    DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep + '0' + os.sep
     DATA_SHAPES_PSB = DATA_PATH + 'LabeledDB_new' + os.sep
 
     SAVED_DATA = DATA_PATH + 'cache' + os.sep
@@ -25,16 +26,20 @@ def import_data():
         shapes = []
         shape_labels = []
 
-        for obj in os.scandir(DATA_SHAPES_PRICETON):
-            if (obj.path.endswith('.off') and obj.is_file()):
-                verts, faces = read_off(obj)
-                shapes.append((verts, faces))
-            elif (obj.path.endswith('.ply') and obj.is_file()):
-                shape = parse_ply(obj)
-                shapes.append(shape)
-            elif (obj.path.endswith('.txt') and obj.is_file()):
-                # TODO: implement if meaningful, perhaps for the PSB that has labels
-                continue
+        # navigating through the dataset to find .off and .ply files
+        for dirName, subdirList, objList in os.walk(DATA_SHAPES_PRICETON):
+            for obj in objList:
+                if obj.endswith('.off'):
+                    file = open(dirName + '\\' + obj, "r")
+                    verts, faces = read_off(file)
+                    shapes.append((verts, faces))
+                elif (obj.endswith('.ply')):
+                    file = open(dirName + '\\' + obj, "r")
+                    shape = parse_ply(file)
+                    shapes.append(shape)
+                elif (obj.endswith('.txt')):
+                    # TODO: implement if meaningful, perhaps for the PSB that has labels
+                    continue
 
         np.save(SAVED_DATA + 'shapes.npy', shapes)
         np.save(SAVED_DATA + 'shape_labels.npy', shape_labels)
