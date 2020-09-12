@@ -49,8 +49,8 @@ def import_data():
     else:
         print('Loading shapes and labels from cache . . .')
 
-        shapes = np.load(SAVED_DATA + 'shapes.npy')
-        shape_labels = np.load(SAVED_DATA + 'shape_labels.npy')
+        shapes = np.load(SAVED_DATA + 'shapes.npy', allow_pickle=True)
+        shape_labels = np.load(SAVED_DATA + 'shape_labels.npy', allow_pickle=True)
 
         print('Existing image train and val sets successfully loaded.')
 
