@@ -25,7 +25,13 @@ GLFW_KEY_DOWN  = 264
 GLFW_KEY_UP  = 265
 GLFW_KEY_ZOOM_IN =  45
 GLFW_KEY_ZOOM_OUT =  61
+GLFW_ENTER = 257
 
+i = 0
+
+vertices = None
+indices = None
+shapes = None
 # Initializes the GL screen
 def InitGL(Width, Height):	
     glShadeModel(GL_SMOOTH)				# Enables Smooth Color Shading
@@ -37,22 +43,23 @@ def InitGL(Width, Height):
 
 
 def main():
-    global xrot, yrot
+    global xrot, yrot, shapes, vertices, indices
     # create window to render 3d mesh
     window = create_window()
     InitGL(1280, 720)
     # import data 
-    shapes, shape_labels = import_data()
+    shapes, shape_info = import_data()
+    print(shape_info)
 
-    # create vertices and indices from imported data
-    vertices = np.array(shapes[0][0])
-    indices = np.array(shapes[0][1])
+    vertices = np.array(shapes[i][0])
+    indices = np.array(shapes[i][1])
 
     # set background color of window
     glClearColor(0.9, 0.9, 0.9, 1)
 
     # the main application loop
     while not glfw.window_should_close(window):
+        # create vertices and indices from imported data
         glfw.poll_events()
 
         width, height = glfw.get_framebuffer_size(window)
@@ -72,21 +79,18 @@ def main():
         glRotatef(yrot,0.0,1.0,0.0)			# Rotate On The Y Axis
         
         
-        glBegin(GL_TRIANGLES)
-        glColor3f(0.0,0.0,0.0)
         for index in indices:
-            for number in index:
+            # Allows handling of quads and triangles
+            if index[0] == 3:
+                glBegin(GL_TRIANGLES)
+            elif index[0] == 4:
+                glBegin(GL_QUADS)
+            glColor3f(0.0,0.0,0.0)
+            for number in index[1:]:
                 glVertex3f(vertices[number][0], vertices[number][1], vertices[number][2])
-        glEnd()
+            glEnd()
         glPopMatrix()
-        
-        # TODO: Printing needs to be fix
-        # glPrint(10, 75, "X-rotation speed: " + str(xspeed) + "     Y-rotation speed:" + str(yspeed))
-        # glPrint(10, 55, "R/r:Switch between rotating and panning.        Delete: Reset the mesh to the initial position.      Esc: Close application.")
-        # glPrint(10, 40 ,"Left arrow: Move left/Decrease x-rotation.      Right Arrow: Move Right/Increase x-rotation.")
-        # glPrint(10, 25, "Up arrow: Move up/Increase y-rotation.          Down Arrow: Move down/Decrease y-rotation")
-        # glPrint(10, 10, "+: Zoom-in                                      - : Zoom-out")
-        
+               
         # Add the speed to the rotation value, is increased by keypressing.
         xrot += xspeed		               
         yrot += yspeed	
@@ -131,7 +135,7 @@ def window_resize(window, width, height):
 
 
 def key_callback(window, key, scancode, action, mods):
-    global z, xspeed, yspeed, rotation, xas, yas   
+    global z, xspeed, yspeed, rotation, xas, yas, vertices, indices, i 
     # avoid thrashing this procedure 
     time.sleep(0.01)
 
@@ -146,12 +150,13 @@ def key_callback(window, key, scancode, action, mods):
     elif (key == 82 or key == 114) and action == GLFW_PRESS:
         if rotation == 0:
             rotation = 1
+            print("You are now in rotaton mode.")
         else:
             rotation = 0
-        print("Rotation is now:" +str(rotation))
+            print("You are now in translation mode.")
+        
 
     elif key == GLFW_KEY_DELETE and action == GLFW_PRESS: # Pressing Delete resets the figure
-        global xrot, yrot, xspeed, yspeed, z, xas, yas
         xrot = 0   # x rotation
         yrot = 0   # y rotation
         xspeed = 0 # x rotation speed
@@ -167,26 +172,37 @@ def key_callback(window, key, scancode, action, mods):
         z+=0.05 
     elif key == GLFW_KEY_UP: # decrease x rotation speed or translate left along x-axis;
         if rotation == 1: # Change between rotation mode and translation mode
-            xspeed-= 0.03
+            xspeed-= 0.02
+            print("X-Rotation speed is now at " + str(round(xspeed, 2))+ ".")
         else:
             yas += 0.04 
     elif key == GLFW_KEY_DOWN: # increase x rotation speed or translate right along x-axis;
         if rotation == 1:
-            xspeed+=0.03
+            xspeed+=0.02
+            print("X-Rotation speed is now at " + str(round(xspeed, 2))+ ".")
         else:
             yas -= 0.04  
     elif key == GLFW_KEY_LEFT: # decrease y rotation speed or translate down along the y-axis;
         if rotation == 1:
-            yspeed-=0.03  
+            yspeed-=0.02
+            print("Y-Rotation speed is now at " + str(round(yspeed, 2))+ ".")  
         else:
             xas -= 0.04 
     elif key == GLFW_KEY_RIGHT: # increase y rotation speed or translate up along the x-axis;
         if rotation == 1:
-            yspeed+=0.03  
+            yspeed+=0.02 
+            print("Y-Rotation speed is now at " + str(round(yspeed, 2))+ ".") 
         else:
             xas += 0.04 
-    elif key == 340:
+    elif key == 340: #Ignore the shift key
         pass
+    elif key == GLFW_ENTER: # For moving through the different meshes
+        if i >= len(indices):
+            i=0
+        else:
+            i += 1
+        vertices = np.array(shapes[i][0])
+        indices = np.array(shapes[i][1])
     else:
         print("Key %d pressed. No action there yet.\n"%(key))
 
