@@ -1,97 +1,193 @@
+import glfw # If getting error remove this line
+from OpenGL.GL import *
+from OpenGL.GL.shaders import compileProgram, compileShader
+from dataLoader import import_data 
 import numpy as np
-import os
-import OpenGL
+import time
+
+# Define needed global variabels for rotation, translation, zooming
+xrot, yrot, xspeed, yspeed = 0,0,0,0
+z = -5.0
+xas, yas = 0.0, 0.0
+
+# allows switching between panning and rotating. 
+rotation = 1
+
+# GLFW action variable
+GLFW_PRESS =  1
+
+# Keybind variables
+GLFW_KEY_ESCAPE =  256
+GLFW_KEY_DELETE = 261
+GLFW_KEY_RIGHT =  262
+GLFW_KEY_LEFT  = 263
+GLFW_KEY_DOWN  = 264
+GLFW_KEY_UP  = 265
+GLFW_KEY_ZOOM_IN =  45
+GLFW_KEY_ZOOM_OUT =  61
+
+# Initializes the GL screen
+def InitGL(Width, Height):	
+    glShadeModel(GL_SMOOTH)				# Enables Smooth Color Shading
+    glClearColor(1.0, 1.0, 1.0, 1.0)	# This Will Clear The Background Color To Black
+    glClearDepth(1.0)					# Enables Clearing Of The Depth Buffer
+    glEnable(GL_DEPTH_TEST)				# Enables Depth Testing
+    glDepthFunc(GL_LEQUAL)				# The Type Of Depth Test To Do
+    glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST) # Really Nice Perspective Calculations 
 
 
 def main():
+    global xrot, yrot
+    # create window to render 3d mesh
+    window = create_window()
+    InitGL(1280, 720)
+    # import data 
     shapes, shape_labels = import_data()
-    None
 
-def import_data():
-    DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
+    # create vertices and indices from imported data
+    vertices = np.array(shapes[0][0])
+    indices = np.array(shapes[0][1])
 
-    # TODO: to import the entire dataset remove the '0' and the redundant os.sep
-    DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep + '0' + os.sep
-    DATA_SHAPES_PSB = DATA_PATH + 'LabeledDB_new' + os.sep
+    # set background color of window
+    glClearColor(0.9, 0.9, 0.9, 1)
 
-    SAVED_DATA = DATA_PATH + 'cache' + os.sep
+    # the main application loop
+    while not glfw.window_should_close(window):
+        glfw.poll_events()
 
-    if(
-       not(
-          os.path.isfile(SAVED_DATA + 'shapes.npy') and
-          os.path.isfile(SAVED_DATA + 'shape_labels.npy')
-       )):
-        print('Importing shapes and labels . . .')
+        width, height = glfw.get_framebuffer_size(window)
+        glViewport(0,0,width, height)
+        
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)		
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        glFrustum(-1.0, 1.0, -1.0, 1.0, 2.5, 20.0)
+    
+        glMatrixMode(GL_MODELVIEW)
+        glPushMatrix() 
+        # Translate based on the xas, yas, and z values.
+        glTranslatef(xas, yas, z)
 
-        shapes = []
-        shape_labels = []
+        glRotatef(xrot,1.0,0.0,0.0)			# Rotate On The X Axis
+        glRotatef(yrot,0.0,1.0,0.0)			# Rotate On The Y Axis
+        
+        
+        glBegin(GL_TRIANGLES)
+        glColor3f(0.0,0.0,0.0)
+        for index in indices:
+            for number in index:
+                glVertex3f(vertices[number][0], vertices[number][1], vertices[number][2])
+        glEnd()
+        glPopMatrix()
+        
+        # TODO: Printing needs to be fix
+        # glPrint(10, 75, "X-rotation speed: " + str(xspeed) + "     Y-rotation speed:" + str(yspeed))
+        # glPrint(10, 55, "R/r:Switch between rotating and panning.        Delete: Reset the mesh to the initial position.      Esc: Close application.")
+        # glPrint(10, 40 ,"Left arrow: Move left/Decrease x-rotation.      Right Arrow: Move Right/Increase x-rotation.")
+        # glPrint(10, 25, "Up arrow: Move up/Increase y-rotation.          Down Arrow: Move down/Decrease y-rotation")
+        # glPrint(10, 10, "+: Zoom-in                                      - : Zoom-out")
+        
+        # Add the speed to the rotation value, is increased by keypressing.
+        xrot += xspeed		               
+        yrot += yspeed	
+        
+        glfw.swap_buffers(window)
 
-        # navigating through the dataset to find .off and .ply files
-        for dirName, subdirList, objList in os.walk(DATA_SHAPES_PRICETON):
-            for obj in objList:
-                if obj.endswith('.off'):
-                    file = open(dirName + '\\' + obj, "r")
-                    verts, faces = read_off(file)
-                    shapes.append((verts, faces))
-                elif (obj.endswith('.ply')):
-                    file = open(dirName + '\\' + obj, "r")
-                    shape = parse_ply(file)
-                    shapes.append(shape)
-                elif (obj.endswith('.txt')):
-                    # TODO: implement if meaningful, perhaps for the PSB that has labels
-                    continue
+    # terminate glfw, free up allocated resources
+    glfw.terminate()
 
-        np.save(SAVED_DATA + 'shapes.npy', shapes)
-        np.save(SAVED_DATA + 'shape_labels.npy', shape_labels)
+def create_window():
+    # initializing glfw library
+    if not glfw.init():
+        raise Exception("glfw cannot be initialized!")
+    
+    # creating the window
+    window = glfw.create_window(1280, 720, "OpenGL window", None, None)
 
-        print('Image train and val sets successfully imported.')
+    # Check if window was created
+    if not window:
+        glfw.terminate()
+        raise Exception("glfw window cannot be created!")
 
+    # make the context current
+    glfw.make_context_current(window)
+
+    glfw.set_window_size_callback(window, window_resize)
+
+    # Define the keycallback functions
+    glfw.set_key_callback(window, key_callback)
+    
+
+    return window
+
+def window_resize(window, width, height):
+    if height == 0:						# Prevent A Divide By Zero If The Window Is Too Small 
+	    height = 1
+
+    glViewport(0, 0, width, height)		# Reset The Current Viewport And Perspective Transformation
+    glMatrixMode(GL_PROJECTION)
+    glLoadIdentity()
+    glMatrixMode(GL_MODELVIEW)
+
+
+def key_callback(window, key, scancode, action, mods):
+    global z, xspeed, yspeed, rotation, xas, yas   
+    # avoid thrashing this procedure 
+    time.sleep(0.01)
+
+    # Only respond to pressing the button not releasing
+    if action == 0: 
+        return
+
+    if key == GLFW_KEY_ESCAPE and action == GLFW_PRESS:
+        # shut down our window 
+	    glfw.set_window_should_close(window, GL_TRUE)
+
+    elif (key == 82 or key == 114) and action == GLFW_PRESS:
+        if rotation == 0:
+            rotation = 1
+        else:
+            rotation = 0
+        print("Rotation is now:" +str(rotation))
+
+    elif key == GLFW_KEY_DELETE and action == GLFW_PRESS: # Pressing Delete resets the figure
+        global xrot, yrot, xspeed, yspeed, z, xas, yas
+        xrot = 0   # x rotation
+        yrot = 0   # y rotation
+        xspeed = 0 # x rotation speed
+        yspeed = 0 # y rotation speed
+        z = -5.0
+        xas = 0.0
+        yas = 0.0
+
+    # Needed for the rotation, translation and zooming
+    elif key == GLFW_KEY_ZOOM_IN: # move the cube into the distance.
+        z-=0.05 
+    elif key == GLFW_KEY_ZOOM_OUT: # move the cube closer.
+        z+=0.05 
+    elif key == GLFW_KEY_UP: # decrease x rotation speed or translate left along x-axis;
+        if rotation == 1: # Change between rotation mode and translation mode
+            xspeed-= 0.03
+        else:
+            yas += 0.04 
+    elif key == GLFW_KEY_DOWN: # increase x rotation speed or translate right along x-axis;
+        if rotation == 1:
+            xspeed+=0.03
+        else:
+            yas -= 0.04  
+    elif key == GLFW_KEY_LEFT: # decrease y rotation speed or translate down along the y-axis;
+        if rotation == 1:
+            yspeed-=0.03  
+        else:
+            xas -= 0.04 
+    elif key == GLFW_KEY_RIGHT: # increase y rotation speed or translate up along the x-axis;
+        if rotation == 1:
+            yspeed+=0.03  
+        else:
+            xas += 0.04 
+    elif key == 340:
+        pass
     else:
-        print('Loading shapes and labels from cache . . .')
-
-        shapes = np.load(SAVED_DATA + 'shapes.npy', allow_pickle=True)
-        shape_labels = np.load(SAVED_DATA + 'shape_labels.npy', allow_pickle=True)
-
-        print('Existing image train and val sets successfully loaded.')
-
-    return shapes, shape_labels
-
-
-def read_off(file):
-    if 'OFF' != file.readline().strip():
-        raise('Not a valid OFF header')
-    n_verts, n_faces, other = tuple([int(s) for s in file.readline().strip().split(' ')])
-    verts = [[float(s) for s in file.readline().strip().split(' ')] for i_vert in range(n_verts)]
-    faces = [[int(s) for s in file.readline().strip().split(' ')][1:] for i_face in range(n_faces)]
-    return verts, faces
-
-
-def parse_ply(file):
-    if 'ply' != file.readline().strip():
-        raise ('Not a valid PLY header')
-    while True:
-        line = str(file.readline().strip())
-        if line.startswith('element vertex'):
-            n_verts = int(line.split()[-1])  # element vertex 290 --> 290
-        if line.startswith('element face'):
-            n_faces = int(line.split()[-1])  # element face 190 --> 190
-        if line.startswith('property'):
-            # performing check for valid XYZ structure
-            if (line.split()[-1] == 'x' and
-                  str(file.readline().strip()).split()[-1] == 'y' and
-                  str(file.readline().strip()).split()[-1] == 'z' and
-                  not str(file.readline().strip()).startswith('property')):
-                continue
-            elif line == 'property list uchar int vertex_indeces':
-                continue
-            else:
-                raise ('Not a valid PLY header. Extra properties can not be evaluated.')
-        if line == 'end_header':
-            break
-
-    verts = [[float(s) for s in file.readline().strip().split(' ')] for i_vert in range(n_verts)]
-    faces = [[int(s) for s in file.readline().strip().split(' ')][1:] for i_face in range(n_faces)]
-    return verts, faces
-
+        print("Key %d pressed. No action there yet.\n"%(key))
 
 main()

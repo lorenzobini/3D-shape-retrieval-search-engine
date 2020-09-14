@@ -1,21 +1,6 @@
 from OpenGL.GL import *
-from OpenGL.GLUT import *
-from OpenGL.GLU import *
 import time
-import struct
-import sys
-from operator import *
-from PIL.Image import *
-
-import numpy
-from numpy import matrix
-from numpy import array
-from numpy import cross
-from numpy.linalg import norm, det
-
-import sys
-from math import pi, sin, cos, tan, radians, sqrt
-
+import glfw
 # The number of our GLUT window
 window = None
 ESCAPE = 27 # Keybinding of the escape key
@@ -58,7 +43,7 @@ def ReSizeGLScene(Width, Height):
 	glMatrixMode(GL_MODELVIEW)
 	glLoadIdentity()
 
-# TODO: Get a print going
+# Function to print the text onto the screen
 def glPrint(x, y, text):
     glColor3f(1.0, 1.0, 1.0)
     glWindowPos2f(x, y)
@@ -117,7 +102,7 @@ def DrawGLScene():
 
     # Change into appropriate text
     glPrint(10, 75, "X-rotation speed: " + str(xspeed) + "     Y-rotation speed:" + str(yspeed))
-    glPrint(10, 55, "R/r:Switch between rotating and panning.        Delete: Reset the mesh to the initial position.")
+    glPrint(10, 55, "R/r:Switch between rotating and panning.        Delete: Reset the mesh to the initial position.      Esc: Close application.")
     glPrint(10, 40 ,"Left arrow: Move left/Decrease x-rotation.      Right Arrow: Move Right/Increase x-rotation.")
     glPrint(10, 25, "Up arrow: Move up/Increase y-rotation.          Down Arrow: Move down/Decrease y-rotation")
     glPrint(10, 10, "Pg up: Zoom-in                                  Pg dn: Zoom-out")
@@ -193,52 +178,33 @@ def specialKeyPressed(key, x, y):
         elif rotation == 0:
             xas += 0.02 
 
-def main():
-    global window
+def key_callback(window, key, action):
+    global z, xspeed, yspeed, rotation, xas, yas   
+    # avoid thrashing this procedure 
+    time.sleep(0.01)
+    
+    key = ord(key)
 
-    #   Initialize GLUT state - glut will take any command line arguments that pertain to it or
-    #   X Windows - look at its documentation at http:reality.sgi.com/mjk/spec3/spec3.html 
-    glutInit(sys.argv)
+    if key == GLFW_KEY_ESCAPE and action == GLFW_PRESS:
+        # shut down our window 
+	    glfw.SetWindowShouldClose(window, GL_TRUE)
 
-    # Select type of Display mode:
-    # Double buffer
-    # RGBA color
-    # Depth buffer
-    # Alpha blending 
-    glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH | GLUT_ALPHA)
+    # elif key == 82 or key == 114:
+    #     print("Pressed rotation key")
+    #     if rotation == 0:
+    #         rotation = 1
+    #     else:
+    #         rotation = 0
 
-    # get a 640 x 480 window 
-    glutInitWindowSize(1000, 650)
+    # elif key == 127: # Pressing Delete resets the figure
+    #     global xrot, yrot, xspeed, yspeed, z, xas, yas
+    #     xrot = 0   # x rotation
+    #     yrot = 0   # y rotation
+    #     xspeed = 0 # x rotation speed
+    #     yspeed = 0 # y rotation speed
+    #     z = -5.0
+    #     xas = 0.0
+    #     yas = 0.0
 
-    # the window starts at the upper left corner of the screen 
-    glutInitWindowPosition(0, 0)
-
-    # Open a window 
-    window = glutCreateWindow(b"Jeff Molofee's GL Code Tutorial ... NeHe '99")
-
-    # Register the function to do all our OpenGL drawing. 
-    glutDisplayFunc(DrawGLScene)
-
-    # Go fullscreen.  This is as soon as possible. 
-    # glutFullScreen()
-
-    # Even if there are no events, redraw our gl scene. 
-    glutIdleFunc(DrawGLScene)
-
-    # Register the function called when our window is resized. 
-    glutReshapeFunc(ReSizeGLScene)
-
-    # Register the function called when the keyboard is pressed. 
-    glutKeyboardFunc(keyPressed)
-
-    # Register the function called when special keys(arrows, page down, etc) are pressed.
-    glutSpecialFunc(specialKeyPressed)
-
-    # Initialize our window. 
-    InitGL(1000, 650)
-
-    # Start Event Processing Engine 
-    glutMainLoop()
-
-
-main()
+    else:
+        print("Key %d pressed. No action there yet.\n"%(key))
