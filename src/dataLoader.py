@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 import os
 import OpenGL
 from collections import OrderedDict
@@ -8,20 +9,27 @@ def import_data():
     DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
 
     # TODO: to import the entire dataset remove the '0' and the redundant os.sep, REMOVE FOR FINAL PROGRAM
-    DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep + '0' + os.sep
+    DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep
     DATA_CLASSIFICATION_PRINCETON = DATA_PATH + 'benchmark' + os.sep + 'classification' + os.sep + 'v1' + os.sep + 'coarse1' + os.sep
 
     SAVED_DATA = DATA_PATH + 'cache' + os.sep
 
     if(
        not(
-          os.path.isfile(SAVED_DATA + 'shapes.npy') and
-          os.path.isfile(SAVED_DATA + 'shape_info.npy')
+          os.path.isfile(SAVED_DATA + 'shapes.NPY') and
+          os.path.isfile(SAVED_DATA + 'verts.NPY') and
+          os.path.isfile(SAVED_DATA + 'faces.NPY') and
+          os.path.isfile(SAVED_DATA + 'faces_types.NPY') and
+          os.path.isfile(SAVED_DATA + 'labels.NPY')
        )):
         print('Importing shapes and labels . . .')
 
         shapes = []
+
         shape_info = {}
+        shape_info["n_verts"] = []
+        shape_info["n_faces"] = []
+        shape_info["faces_types"] = []
 
         # navigating through the dataset to find .off and .ply files
         for dirName, subdirList, objList in os.walk(DATA_SHAPES_PRICETON):
@@ -44,6 +52,8 @@ def import_data():
                     # TODO: implement if meaningful, perhaps for the PSB that has labels
                     continue
 
+
+        # Importing classes
         temp1 = {}
         for dirName, subdirList, objList in os.walk(DATA_CLASSIFICATION_PRINCETON):
             for obj in objList:
@@ -54,16 +64,34 @@ def import_data():
         # Add the dictionary of label, format of 'mesh number': (classname, classnumber)
         shape_info["labels"] = temp1
         np.save(SAVED_DATA + 'shapes.npy', shapes)
-        # np.save(SAVED_DATA + 'shape_info.npy', shape_info)
+        np.save(SAVED_DATA + 'verts.npy', shape_info["n_verts"])
+        np.save(SAVED_DATA + 'faces.npy', shape_info["n_faces"])
+        np.save(SAVED_DATA + 'faces_types.npy', shape_info["faces_types"])
+        np.save(SAVED_DATA + 'labels.npy', shape_info["labels"])
         print('Image train and val sets successfully imported.')
 
     else:
         print('Loading shapes and labels from cache . . .')
 
+        shape_info = {}
+
         shapes = np.load(SAVED_DATA + 'shapes.npy', allow_pickle=True)
-        shape_info = np.load(SAVED_DATA + 'shape_info.npy', allow_pickle=True)
+        shape_info["n_verts"] = np.load(SAVED_DATA + 'verts.npy', allow_pickle=True)
+        shape_info["n_faces"] = np.load(SAVED_DATA + 'faces.npy', allow_pickle=True)
+        shape_info["faces_types"] = np.load(SAVED_DATA + 'faces_types.npy', allow_pickle=True)
+        shape_info["labels"] = np.load(SAVED_DATA + 'labels.npy', allow_pickle=True)
+
 
         print('Existing image train and val sets successfully loaded.')
+
+    # Computing average number of vertices and standard deviation
+    avg_verts = np.mean(shape_info["n_verts"])
+    sd_verts = np.std(shape_info["n_verts"])
+
+    # Showing the normal distribution of vertices on screen
+    SHOW_GRAPH = True
+    if SHOW_GRAPH:
+        show_graph(shape_info["n_verts"], avg_verts)
 
     return shapes, shape_info
 
@@ -128,3 +156,18 @@ def read_classes(file):
     return class_dict
 
 
+def show_graph(vertices, avg):
+    hist, bin_edges = np.histogram(vertices, bins=range(0, 40000, 5000))
+
+    plt.figure(figsize=[10, 8])
+
+    plt.bar(bin_edges[:-1], hist, width=4000, color='#0504aa', alpha=0.7)
+    plt.xlim(min(bin_edges), max(bin_edges))
+    plt.grid(axis='y', alpha=0.75)
+    plt.xlabel('Number of Vertices', fontsize=15)
+    plt.ylabel('Frequency', fontsize=15)
+    plt.xticks(fontsize=15)
+    plt.yticks(fontsize=15)
+    plt.title('Normal Distribution Histogram', fontsize=15)
+
+    plt.show()
