@@ -1,12 +1,12 @@
 import glfw # If getting error remove this line
 from OpenGL.GL import *
 from OpenGL.GL.shaders import compileProgram, compileShader
-from dataLoader import import_data 
+from src.dataLoader import import_data
 import numpy as np
 import time
 
 # Define needed global variabels for rotation, translation, zooming
-xrot, yrot, xspeed, yspeed = 0,0,0,0
+xrot, yrot, xspeed, yspeed = 0, 0, 0, 0
 z = -5.0
 xas, yas = 0.0, 0.0
 
@@ -14,17 +14,17 @@ xas, yas = 0.0, 0.0
 rotation = 1
 
 # GLFW action variable
-GLFW_PRESS =  1
+GLFW_PRESS = 1
 
 # Keybind variables
-GLFW_KEY_ESCAPE =  256
+GLFW_KEY_ESCAPE = 256
 GLFW_KEY_DELETE = 261
-GLFW_KEY_RIGHT =  262
-GLFW_KEY_LEFT  = 263
-GLFW_KEY_DOWN  = 264
-GLFW_KEY_UP  = 265
-GLFW_KEY_ZOOM_IN =  45
-GLFW_KEY_ZOOM_OUT =  61
+GLFW_KEY_RIGHT = 262
+GLFW_KEY_LEFT = 263
+GLFW_KEY_DOWN = 264
+GLFW_KEY_UP = 265
+GLFW_KEY_ZOOM_IN = 45
+GLFW_KEY_ZOOM_OUT = 61
 GLFW_ENTER = 257
 
 i = 0
@@ -75,8 +75,8 @@ def main():
         # Translate based on the xas, yas, and z values.
         glTranslatef(xas, yas, z)
 
-        glRotatef(xrot,1.0,0.0,0.0)			# Rotate On The X Axis
-        glRotatef(yrot,0.0,1.0,0.0)			# Rotate On The Y Axis
+        glRotatef(xrot, 1.0, 0.0, 0.0)			# Rotate On The X Axis
+        glRotatef(yrot, 0.0, 1.0, 0.0)			# Rotate On The Y Axis
         
         
         for index in indices:

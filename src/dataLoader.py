@@ -9,7 +9,6 @@ def import_data():
 
     # TODO: to import the entire dataset remove the '0' and the redundant os.sep, REMOVE FOR FINAL PROGRAM
     DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep + '0' + os.sep
-    #DATA_SHAPES_PSB = DATA_PATH + 'LabeledDB_new' + os.sep
     DATA_CLASSIFICATION_PRINCETON = DATA_PATH + 'benchmark' + os.sep + 'classification' + os.sep + 'v1' + os.sep + 'coarse1' + os.sep
 
     SAVED_DATA = DATA_PATH + 'cache' + os.sep
@@ -23,7 +22,7 @@ def import_data():
 
         shapes = []
         shape_info = {}
-        temp1, temp2 , temp3 = [], [], []
+
         # navigating through the dataset to find .off and .ply files
         for dirName, subdirList, objList in os.walk(DATA_SHAPES_PRICETON):
             for obj in objList:
@@ -31,23 +30,20 @@ def import_data():
                     file = open(dirName + '\\' + obj, "r")
                     verts, faces, n_verts, n_faces, face_type = read_off(file)
                     shapes.append((verts, faces))
-                    temp1.append(n_verts)
-                    temp2.append(n_faces)
-                    temp3.append(face_type)
+                    shape_info["n_verts"].append(n_verts)
+                    shape_info["n_faces"].append(n_faces)
+                    shape_info["faces_types"].append(face_type)
                 elif (obj.endswith('.ply')):
                     file = open(dirName + '\\' + obj, "r")
                     verts, faces, n_verts, n_faces, face_type = parse_ply(file)
                     shapes.append((verts, faces))
-                    temp1.append(n_verts)
-                    temp2.append(n_faces)
-                    temp3.append(face_type)
+                    shape_info["n_verts"].append(n_verts)
+                    shape_info["n_faces"].append(n_faces)
+                    shape_info["faces_types"].append(face_type)
                 elif (obj.endswith('.txt')):
                     # TODO: implement if meaningful, perhaps for the PSB that has labels
                     continue
-        
-        shape_info["n_verts"] = temp1
-        shape_info["n_faces"] = temp2
-        shape_info["faces_types"] = temp3
+
         temp1 = {}
         for dirName, subdirList, objList in os.walk(DATA_CLASSIFICATION_PRINCETON):
             for obj in objList:
@@ -98,7 +94,7 @@ def parse_ply(file):
                   str(file.readline().strip()).split()[-1] == 'z' and
                   not str(file.readline().strip()).startswith('property')):
                 continue
-            elif line == 'property list uchar int vertex_indeces':
+            elif line == 'property list uchar int vertex_indices':
                 continue
             else:
                 raise ('Not a valid PLY header. Extra properties can not be evaluated.')
@@ -109,6 +105,7 @@ def parse_ply(file):
     faces = [[int(s) for s in file.readline().strip().split(' ')] for i_face in range(n_faces)]
     faces_types = list(set([x[0] for x in faces]))[0]
     return verts, faces,n_verts, n_faces, faces_types
+
 
 def read_classes(file):
     if 'PSB' not in file.readline().strip():
@@ -129,4 +126,5 @@ def read_classes(file):
             class_dict[line[0]] = (class_name, class_count)
             modelcount += 1
     return class_dict
-    
+
+
