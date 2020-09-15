@@ -32,8 +32,12 @@ i = 0
 vertices = None
 indices = None
 shapes = None
+
+
 # Initializes the GL screen
-def InitGL(Width, Height):	
+
+
+def InitGL(width, height):
     glShadeModel(GL_SMOOTH)				# Enables Smooth Color Shading
     glClearColor(1.0, 1.0, 1.0, 1.0)	# This Will Clear The Background Color To Black
     glClearDepth(1.0)					# Enables Clearing Of The Depth Buffer
@@ -44,12 +48,14 @@ def InitGL(Width, Height):
 
 def main():
     global xrot, yrot, shapes, vertices, indices
-    # create window to render 3d mesh
-    window = create_window()
-    InitGL(1280, 720)
+
     # import data 
     shapes, shape_info = import_data()
     print(shape_info)
+
+    # create window to render 3d mesh
+    window = create_window()
+    InitGL(1280, 720)
 
     vertices = np.array(shapes[i][0])
     indices = np.array(shapes[i][1])
@@ -100,6 +106,7 @@ def main():
     # terminate glfw, free up allocated resources
     glfw.terminate()
 
+
 def create_window():
     # initializing glfw library
     if not glfw.init():
@@ -120,13 +127,13 @@ def create_window():
 
     # Define the keycallback functions
     glfw.set_key_callback(window, key_callback)
-    
 
     return window
 
+
 def window_resize(window, width, height):
     if height == 0:						# Prevent A Divide By Zero If The Window Is Too Small 
-	    height = 1
+        height = 1
 
     glViewport(0, 0, width, height)		# Reset The Current Viewport And Perspective Transformation
     glMatrixMode(GL_PROJECTION)
@@ -145,7 +152,7 @@ def key_callback(window, key, scancode, action, mods):
 
     if key == GLFW_KEY_ESCAPE and action == GLFW_PRESS:
         # shut down our window 
-	    glfw.set_window_should_close(window, GL_TRUE)
+        glfw.set_window_should_close(window, GL_TRUE)
 
     elif (key == 82 or key == 114) and action == GLFW_PRESS:
         if rotation == 0:
@@ -156,54 +163,55 @@ def key_callback(window, key, scancode, action, mods):
             print("You are now in translation mode.")
         
 
-    elif key == GLFW_KEY_DELETE and action == GLFW_PRESS: # Pressing Delete resets the figure
-        xrot = 0   # x rotation
-        yrot = 0   # y rotation
-        xspeed = 0 # x rotation speed
-        yspeed = 0 # y rotation speed
+    elif key == GLFW_KEY_DELETE and action == GLFW_PRESS: #Pressing Delete resets the figure
+        xrot = 0    # x rotation
+        yrot = 0    # y rotation
+        xspeed = 0  # x rotation speed
+        yspeed = 0  # y rotation speed
         z = -5.0
         xas = 0.0
         yas = 0.0
 
     # Needed for the rotation, translation and zooming
-    elif key == GLFW_KEY_ZOOM_IN: # move the cube into the distance.
-        z-=0.05 
-    elif key == GLFW_KEY_ZOOM_OUT: # move the cube closer.
-        z+=0.05 
-    elif key == GLFW_KEY_UP: # decrease x rotation speed or translate left along x-axis;
-        if rotation == 1: # Change between rotation mode and translation mode
-            xspeed-= 0.02
+    elif key == GLFW_KEY_ZOOM_IN:  # move the cube into the distance.
+        z -= 0.05
+    elif key == GLFW_KEY_ZOOM_OUT:  # move the cube closer.
+        z += 0.05
+    elif key == GLFW_KEY_UP:  # decrease x rotation speed or translate left along x-axis;
+        if rotation == 1:  # Change between rotation mode and translation mode
+            xspeed -= 0.02
             print("X-Rotation speed is now at " + str(round(xspeed, 2))+ ".")
         else:
             yas += 0.04 
-    elif key == GLFW_KEY_DOWN: # increase x rotation speed or translate right along x-axis;
+    elif key == GLFW_KEY_DOWN:  # increase x rotation speed or translate right along x-axis;
         if rotation == 1:
-            xspeed+=0.02
+            xspeed += 0.02
             print("X-Rotation speed is now at " + str(round(xspeed, 2))+ ".")
         else:
             yas -= 0.04  
-    elif key == GLFW_KEY_LEFT: # decrease y rotation speed or translate down along the y-axis;
+    elif key == GLFW_KEY_LEFT:  # decrease y rotation speed or translate down along the y-axis;
         if rotation == 1:
             yspeed-=0.02
             print("Y-Rotation speed is now at " + str(round(yspeed, 2))+ ".")  
         else:
             xas -= 0.04 
-    elif key == GLFW_KEY_RIGHT: # increase y rotation speed or translate up along the x-axis;
+    elif key == GLFW_KEY_RIGHT:  # increase y rotation speed or translate up along the x-axis;
         if rotation == 1:
-            yspeed+=0.02 
+            yspeed += 0.02
             print("Y-Rotation speed is now at " + str(round(yspeed, 2))+ ".") 
         else:
             xas += 0.04 
-    elif key == 340: #Ignore the shift key
+    elif key == 340:  #Ignore the shift key
         pass
-    elif key == GLFW_ENTER: # For moving through the different meshes
+    elif key == GLFW_ENTER:  # For moving through the different meshes
         if i >= len(indices):
-            i=0
+            i = 0
         else:
             i += 1
         vertices = np.array(shapes[i][0])
         indices = np.array(shapes[i][1])
     else:
         print("Key %d pressed. No action there yet.\n"%(key))
+
 
 main()

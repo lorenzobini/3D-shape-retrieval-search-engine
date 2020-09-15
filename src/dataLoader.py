@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+from src.shape import Shape
 import OpenGL
 from collections import OrderedDict
 
@@ -10,7 +11,8 @@ def import_data():
 
     # TODO: to import the entire dataset remove the '0' and the redundant os.sep, REMOVE FOR FINAL PROGRAM
     DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep
-    DATA_CLASSIFICATION_PRINCETON = DATA_PATH + 'benchmark' + os.sep + 'classification' + os.sep + 'v1' + os.sep + 'coarse1' + os.sep
+    DATA_CLASSIFICATION_PRINCETON = DATA_PATH + 'benchmark' + os.sep + 'classification' + os.sep + 'v1' +\
+                                    os.sep + 'coarse1' + os.sep
 
     SAVED_DATA = DATA_PATH + 'cache' + os.sep
 
@@ -85,13 +87,13 @@ def import_data():
         print('Existing image train and val sets successfully loaded.')
 
     # Computing average number of vertices and standard deviation
-    avg_verts = np.mean(shape_info["n_verts"])
-    sd_verts = np.std(shape_info["n_verts"])
+    avg_faces = np.mean(shape_info["n_faces"])
+    sd_faces= np.std(shape_info["n_faces"])
 
     # Showing the normal distribution of vertices on screen
     SHOW_GRAPH = True
     if SHOW_GRAPH:
-        show_graph(shape_info["n_verts"], avg_verts)
+        show_graph(shape_info["n_faces"], avg_faces, sd_faces)
 
     return shapes, shape_info
 
@@ -156,8 +158,8 @@ def read_classes(file):
     return class_dict
 
 
-def show_graph(vertices, avg):
-    hist, bin_edges = np.histogram(vertices, bins=range(0, 40000, 5000))
+def show_graph(faces, avg, sd):
+    hist, bin_edges = np.histogram(faces, bins=range(0, 40000, 5000))
 
     plt.figure(figsize=[10, 8])
 
