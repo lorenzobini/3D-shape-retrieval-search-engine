@@ -3,8 +3,7 @@ import matplotlib.pyplot as plt
 import os
 import re
 from src.shape import Shape
-import OpenGL
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 
 
 def import_data():
@@ -31,7 +30,7 @@ def import_data():
         tot_verts = []
         tot_faces = []
 
-        # Importing labels
+        # Importing labels # TODO: rethink function
         temp1 = {}
         for dirName, subdirList, objList in os.walk(DATA_CLASSIFICATION_PRINCETON):
             for obj in objList:
@@ -110,7 +109,7 @@ def read_off(file):
     n_verts, n_faces, other = tuple([int(s) for s in file.readline().strip().split(' ')])
     verts = [[float(s) for s in file.readline().strip().split(' ')] for i_vert in range(n_verts)]
     faces = [[int(s) for s in file.readline().strip().split(' ')] for i_face in range(n_faces)]
-    return verts, faces
+    return verts, faces, n_verts, n_faces
 
 
 def parse_ply(file):
@@ -138,7 +137,7 @@ def parse_ply(file):
 
     verts = [[float(s) for s in file.readline().strip().split(' ')] for i_vert in range(n_verts)]
     faces = [[int(s) for s in file.readline().strip().split(' ')] for i_face in range(n_faces)]
-    return verts, faces
+    return verts, faces, n_verts, n_faces
 
 
 def read_classes(file):
@@ -151,6 +150,26 @@ def read_classes(file):
         line = file.readline().strip().split()
         if len(line) == 0:
             pass  
+        elif len(line) > 1:
+            class_name = str(line[0])
+            class_count += 1
+        elif len(line) > 2 and line[1] == '0' and line[2] == '0': # empty class label
+            pass
+        else: # add the class to the number of the model
+            class_dict[line[0]] = (class_name, class_count)
+            modelcount += 1
+    return class_dict
+
+def read_classification(file):
+    if 'PSB' not in file.readline().strip():
+        raise ('Not a valid PSB classification header')
+    num_classes, num_models = file.readline().strip().split()
+    modelcount, class_count = 0, 0
+    class_dict = {}
+    while modelcount < int(num_models):
+        line = file.readline().strip().split()
+        if len(line) == 0:
+            pass
         elif len(line) > 1:
             class_name = str(line[0])
             class_count += 1
@@ -178,15 +197,15 @@ def read_info(file, shape):
                                    float(matches.group('zmax')))
 
         if line.startswith('avg_depth'):
-            shape.set_avg_depth(int(line.split()[-1]))
+            shape.set_avg_depth(float(line.split()[-1]))
         if line.startswith('center'):
-            pattern = 'center: ((?P<x>.*),(?P<y>.*),(?P<z>.*))'
+            pattern = 'center: \((?P<x>.*),(?P<y>.*),(?P<z>.*)\)'
             matches = re.match(pattern, line)
             shape.set_center((float(matches.group('x')),
                               float(matches.group('y')),
                               float(matches.group('z'))))
         if line.startswith('scale'):
-            shape.set_scale(int(line.split()[-1]))
+            shape.set_scale(float(line.split()[-1]))
 
     return shape
 

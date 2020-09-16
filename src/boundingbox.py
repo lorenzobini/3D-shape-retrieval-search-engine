@@ -8,6 +8,7 @@ class BoundingBox:
     ymax: float
     zmax: float
 
+
     def __init__(self, xmin, ymin, zmin, xmax, ymax, zmax):
         self.xmin = xmin
         self.ymin = ymin

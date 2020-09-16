@@ -57,8 +57,8 @@ def main():
     window = create_window()
     InitGL(1280, 720)
 
-    vertices = np.array(shapes[i][0])
-    indices = np.array(shapes[i][1])
+    vertices = np.array(shapes[i].vertices)
+    indices = np.array(shapes[i].vertices[1]) # TODO: solve
 
     # set background color of window
     glClearColor(0.9, 0.9, 0.9, 1)

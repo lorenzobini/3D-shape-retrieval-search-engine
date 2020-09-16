@@ -29,6 +29,7 @@ class Shape:
         self.n_verts = len(vertices)
         self.n_faces = len(faces)
         self.faces_types = list(set([x[0] for x in faces]))[0]
+        self.bbox = None
 
     # ID
 
@@ -79,13 +80,11 @@ class Shape:
 
     # Extra Information
 
-    axis_x: (float, float, float)
-    axis_y: (float, float, float)
-    axis_z: (float, float, float)
-    principle_values: (float, float, float)
-
     def set_bounding_box(self, xmin, ymin, zmin, xmax, ymax, zmax):
-        self.bbox.set_bbox(xmin, ymin, zmin, xmax, ymax, zmax)
+        if self.bbox is None:
+            self.bbox = BoundingBox(xmin, ymin, zmin, xmax, ymax, zmax)
+        else:
+            self.bbox.set_bbox(xmin, ymin, zmin, xmax, ymax, zmax)
 
     def get_buinding_box(self) -> BoundingBox:
         return self.bbox
