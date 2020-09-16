@@ -1,16 +1,17 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import re
 from src.shape import Shape
 import OpenGL
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 
 
 def import_data():
     DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
 
     # TODO: to import the entire dataset remove the '0' and the redundant os.sep, REMOVE FOR FINAL PROGRAM
-    DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep
+    DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep + '0' + os.sep
     DATA_CLASSIFICATION_PRINCETON = DATA_PATH + 'benchmark' + os.sep + 'classification' + os.sep + 'v1' +\
                                     os.sep + 'coarse1' + os.sep
 
@@ -19,43 +20,18 @@ def import_data():
     if(
        not(
           os.path.isfile(SAVED_DATA + 'shapes.NPY') and
-          os.path.isfile(SAVED_DATA + 'verts.NPY') and
-          os.path.isfile(SAVED_DATA + 'faces.NPY') and
-          os.path.isfile(SAVED_DATA + 'faces_types.NPY') and
-          os.path.isfile(SAVED_DATA + 'labels.NPY')
+          os.path.isfile(SAVED_DATA + 'labels.NPY') and
+          os.path.isfile(SAVED_DATA + 'n_verts.NPY') and
+          os.path.isfile(SAVED_DATA + 'n_faces.NPY')
        )):
         print('Importing shapes and labels . . .')
 
         shapes = []
+        labels = defaultdict(lambda def_value: None)
+        tot_verts = []
+        tot_faces = []
 
-        shape_info = {}
-        shape_info["n_verts"] = []
-        shape_info["n_faces"] = []
-        shape_info["faces_types"] = []
-
-        # navigating through the dataset to find .off and .ply files
-        for dirName, subdirList, objList in os.walk(DATA_SHAPES_PRICETON):
-            for obj in objList:
-                if obj.endswith('.off'):
-                    file = open(dirName + '\\' + obj, "r")
-                    verts, faces, n_verts, n_faces, face_type = read_off(file)
-                    shapes.append((verts, faces))
-                    shape_info["n_verts"].append(n_verts)
-                    shape_info["n_faces"].append(n_faces)
-                    shape_info["faces_types"].append(face_type)
-                elif (obj.endswith('.ply')):
-                    file = open(dirName + '\\' + obj, "r")
-                    verts, faces, n_verts, n_faces, face_type = parse_ply(file)
-                    shapes.append((verts, faces))
-                    shape_info["n_verts"].append(n_verts)
-                    shape_info["n_faces"].append(n_faces)
-                    shape_info["faces_types"].append(face_type)
-                elif (obj.endswith('.txt')):
-                    # TODO: implement if meaningful, perhaps for the PSB that has labels
-                    continue
-
-
-        # Importing classes
+        # Importing labels
         temp1 = {}
         for dirName, subdirList, objList in os.walk(DATA_CLASSIFICATION_PRINCETON):
             for obj in objList:
@@ -64,38 +40,68 @@ def import_data():
                     temp1.update(read_classes(file))
 
         # Add the dictionary of label, format of 'mesh number': (classname, classnumber)
-        shape_info["labels"] = temp1
+        labels = temp1
+
+        # navigating through the dataset to find .off and .ply files
+        for dirName, subdirList, objList in os.walk(DATA_SHAPES_PRICETON):
+            # Importing the shape first
+            shape = None
+            for obj in objList:
+                if obj.endswith('.off'):
+                    file = open(dirName + '\\' + obj, "r")
+                    verts, faces, n_verts, n_faces = read_off(file)
+                    tot_verts.append(n_verts)
+                    tot_faces.append(n_faces)
+
+                    shape = Shape(verts, faces)
+
+                elif (obj.endswith('.ply')):
+                    file = open(dirName + '\\' + obj, "r")
+                    verts, faces, n_verts, n_faces = parse_ply(file)
+                    tot_verts.append(n_verts)
+                    tot_faces.append(n_faces)
+
+                    shape = Shape(verts, faces)
+
+            # Importing extra information
+            for obj in objList:
+                if obj.endswith('.txt'):
+                    file = open(dirName + '\\' + obj, "r")
+                    shape = read_info(file, shape)
+
+            if shape is not None:
+                shapes.append(shape)
+
+
+        np.save(SAVED_DATA + 'labels.npy', labels)
         np.save(SAVED_DATA + 'shapes.npy', shapes)
-        np.save(SAVED_DATA + 'verts.npy', shape_info["n_verts"])
-        np.save(SAVED_DATA + 'faces.npy', shape_info["n_faces"])
-        np.save(SAVED_DATA + 'faces_types.npy', shape_info["faces_types"])
-        np.save(SAVED_DATA + 'labels.npy', shape_info["labels"])
+        np.save(SAVED_DATA + 'n_verts.npy', tot_verts)
+        np.save(SAVED_DATA + 'n_faces.npy', tot_faces)
+
         print('Image train and val sets successfully imported.')
 
     else:
         print('Loading shapes and labels from cache . . .')
 
-        shape_info = {}
-
+        labels = np.load(SAVED_DATA + 'labels.npy', allow_pickle=True)
         shapes = np.load(SAVED_DATA + 'shapes.npy', allow_pickle=True)
-        shape_info["n_verts"] = np.load(SAVED_DATA + 'verts.npy', allow_pickle=True)
-        shape_info["n_faces"] = np.load(SAVED_DATA + 'faces.npy', allow_pickle=True)
-        shape_info["faces_types"] = np.load(SAVED_DATA + 'faces_types.npy', allow_pickle=True)
-        shape_info["labels"] = np.load(SAVED_DATA + 'labels.npy', allow_pickle=True)
-
+        tot_verts = np.load(SAVED_DATA + 'n_verts.npy', allow_pickle=True)
+        tot_faces = np.load(SAVED_DATA + 'n_faces.npy', allow_pickle=True)
 
         print('Existing image train and val sets successfully loaded.')
 
     # Computing average number of vertices and standard deviation
-    avg_faces = np.mean(shape_info["n_faces"])
-    sd_faces= np.std(shape_info["n_faces"])
+    avg_faces = np.mean(tot_faces)
+    sd_faces = np.std(tot_faces)
 
     # Showing the normal distribution of vertices on screen
+
     SHOW_GRAPH = True
     if SHOW_GRAPH:
-        show_graph(shape_info["n_faces"], avg_faces, sd_faces)
+        show_graph(tot_faces, avg_faces, sd_faces)
 
-    return shapes, shape_info
+
+    return shapes, labels
 
 
 def read_off(file):
@@ -104,8 +110,7 @@ def read_off(file):
     n_verts, n_faces, other = tuple([int(s) for s in file.readline().strip().split(' ')])
     verts = [[float(s) for s in file.readline().strip().split(' ')] for i_vert in range(n_verts)]
     faces = [[int(s) for s in file.readline().strip().split(' ')] for i_face in range(n_faces)]
-    faces_types = list(set([x[0] for x in faces]))[0]
-    return verts, faces, n_verts, n_faces, faces_types
+    return verts, faces
 
 
 def parse_ply(file):
@@ -133,8 +138,7 @@ def parse_ply(file):
 
     verts = [[float(s) for s in file.readline().strip().split(' ')] for i_vert in range(n_verts)]
     faces = [[int(s) for s in file.readline().strip().split(' ')] for i_face in range(n_faces)]
-    faces_types = list(set([x[0] for x in faces]))[0]
-    return verts, faces,n_verts, n_faces, faces_types
+    return verts, faces
 
 
 def read_classes(file):
@@ -156,6 +160,35 @@ def read_classes(file):
             class_dict[line[0]] = (class_name, class_count)
             modelcount += 1
     return class_dict
+
+
+def read_info(file, shape):
+    for line in file:
+        if line.startswith('mid'):
+            shape.set_id(int(line.split()[-1]))  # element vertex 290 --> 290
+        if line.startswith('bounding_box'):
+            pattern = 'bounding_box: xmin = (?P<xmin>.*), ymin = (?P<ymin>.*), zmin = (?P<zmin>.*),' \
+                      ' xmax = (?P<xmax>.*), ymax = (?P<ymax>.*), zmax = (?P<zmax>.*)'
+            matches = re.match(pattern, line)
+            shape.set_bounding_box(float(matches.group('xmin')),
+                                   float(matches.group('ymin')),
+                                   float(matches.group('zmin')),
+                                   float(matches.group('xmax')),
+                                   float(matches.group('ymax')),
+                                   float(matches.group('zmax')))
+
+        if line.startswith('avg_depth'):
+            shape.set_avg_depth(int(line.split()[-1]))
+        if line.startswith('center'):
+            pattern = 'center: ((?P<x>.*),(?P<y>.*),(?P<z>.*))'
+            matches = re.match(pattern, line)
+            shape.set_center((float(matches.group('x')),
+                              float(matches.group('y')),
+                              float(matches.group('z'))))
+        if line.startswith('scale'):
+            shape.set_scale(int(line.split()[-1]))
+
+    return shape
 
 
 def show_graph(faces, avg, sd):
