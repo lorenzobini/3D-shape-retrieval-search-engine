@@ -13,7 +13,9 @@ class Shape:
     avg_depth: float
     center: (float, float, float)
     scale: float
-    classification: str
+    class_id: int
+    class_name: str
+
 
     # to be determined if necessary -------------------------
     axis_x: (float, float, float)
@@ -107,11 +109,12 @@ class Shape:
     def get_scale(self) -> float:
         return self.scale
 
-    def set_classification(self, classification):
-        self.classification = classification
+    def set_class(self, class_id, class_name):
+        self.class_id = class_id
+        self.class_name = class_name
 
-    def get_classification(self) -> str:
-        return self.classification
+    def get_class(self):
+        return self.class_id, self.class_name
 
     # TODO: eventually implement getter and setter for x y z axis
 

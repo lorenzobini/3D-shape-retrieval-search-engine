@@ -30,7 +30,7 @@ def import_data():
         tot_verts = []
         tot_faces = []
 
-        # Importing labels # TODO: rethink function
+        # Importing labels #
         temp1 = {}
         for dirName, subdirList, objList in os.walk(DATA_CLASSIFICATION_PRINCETON):
             for obj in objList:
@@ -68,7 +68,12 @@ def import_data():
                     file = open(dirName + '\\' + obj, "r")
                     shape = read_info(file, shape)
 
+
             if shape is not None:
+                # Assigning the class if present
+                shape_id = str(shape.get_id())
+                shape.set_class(labels[shape_id][1], labels[shape_id][0])  # class id, class name
+                # Appending to list
                 shapes.append(shape)
 
 
@@ -150,26 +155,6 @@ def read_classes(file):
         line = file.readline().strip().split()
         if len(line) == 0:
             pass  
-        elif len(line) > 1:
-            class_name = str(line[0])
-            class_count += 1
-        elif len(line) > 2 and line[1] == '0' and line[2] == '0': # empty class label
-            pass
-        else: # add the class to the number of the model
-            class_dict[line[0]] = (class_name, class_count)
-            modelcount += 1
-    return class_dict
-
-def read_classification(file):
-    if 'PSB' not in file.readline().strip():
-        raise ('Not a valid PSB classification header')
-    num_classes, num_models = file.readline().strip().split()
-    modelcount, class_count = 0, 0
-    class_dict = {}
-    while modelcount < int(num_models):
-        line = file.readline().strip().split()
-        if len(line) == 0:
-            pass
         elif len(line) > 1:
             class_name = str(line[0])
             class_count += 1

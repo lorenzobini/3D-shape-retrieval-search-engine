@@ -58,7 +58,7 @@ def main():
     InitGL(1280, 720)
 
     vertices = np.array(shapes[i].vertices)
-    indices = np.array(shapes[i].vertices[1]) # TODO: solve
+    indices = np.array(shapes[i].faces)
 
     # set background color of window
     glClearColor(0.9, 0.9, 0.9, 1)
@@ -208,8 +208,8 @@ def key_callback(window, key, scancode, action, mods):
             i = 0
         else:
             i += 1
-        vertices = np.array(shapes[i][0])
-        indices = np.array(shapes[i][1])
+        vertices = np.array(shapes[i].vertices)
+        indices = np.array(shapes[i].faces)
     else:
         print("Key %d pressed. No action there yet.\n"%(key))
 
