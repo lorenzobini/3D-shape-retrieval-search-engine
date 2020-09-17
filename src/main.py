@@ -50,8 +50,7 @@ def main():
     global xrot, yrot, shapes, vertices, indices
 
     # import data 
-    shapes, shape_info = import_data()
-    print(shape_info)
+    shapes, labels = import_data()
 
     # create window to render 3d mesh
     window = create_window()
