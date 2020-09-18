@@ -1,13 +1,11 @@
 import glfw # If getting error remove this line
-from blis.cy import __pyx_unpickle___Pyx_EnumMeta
-import lib.PyMesh.python.pymesh as mesh
 from OpenGL.GL import *
 from OpenGL.GL.shaders import compileProgram, compileShader
-
-from PyMesh.python import pymesh
 from src.dataLoader import import_data
+from src.shape import Shape
 import numpy as np
 import time
+
 
 # Define needed global variabels for rotation, translation, zooming
 xrot, yrot, xspeed, yspeed = 0, 0, 0, 0
@@ -16,6 +14,7 @@ xas, yas = 0.0, 0.0
 
 # allows switching between panning and rotating. 
 rotation = 1
+DRAW_EDGES = False
 
 # GLFW action variable
 GLFW_PRESS = 1
@@ -30,6 +29,7 @@ GLFW_KEY_UP = 265
 GLFW_KEY_ZOOM_IN = 45
 GLFW_KEY_ZOOM_OUT = 61
 GLFW_ENTER = 257
+GLFW_KEY_V = 86
 
 i = 0
 
@@ -94,10 +94,19 @@ def main():
                 glBegin(GL_TRIANGLES)
             elif index[0] == 4:
                 glBegin(GL_QUADS)
-            glColor3f(0.0,0.0,0.0)
+            glColor3f(0.5,0.5,0.5)
             for number in index[1:]:
                 glVertex3f(vertices[number][0], vertices[number][1], vertices[number][2])
             glEnd()
+        
+        if DRAW_EDGES: 
+            for index in indices:
+                # Allows handling of quads and triangles
+                glBegin(GL_LINES)
+                glColor3f(0.0,0.0,0.0)
+                for number in index[1:]:
+                    glVertex3f(vertices[number][0], vertices[number][1], vertices[number][2])
+                glEnd()
         glPopMatrix()
                
         # Add the speed to the rotation value, is increased by keypressing.
@@ -145,7 +154,7 @@ def window_resize(window, width, height):
 
 
 def key_callback(window, key, scancode, action, mods):
-    global z, xspeed, yspeed, rotation, xas, yas, vertices, indices, i 
+    global z, xspeed, yspeed, rotation, xas, yas, vertices, indices, i , DRAW_EDGES
     # avoid thrashing this procedure 
     time.sleep(0.01)
 
@@ -154,6 +163,7 @@ def key_callback(window, key, scancode, action, mods):
         return
 
     if key == GLFW_KEY_ESCAPE and action == GLFW_PRESS:
+        print("Shutting down.")
         # shut down our window 
         glfw.set_window_should_close(window, GL_TRUE)
 
@@ -167,10 +177,11 @@ def key_callback(window, key, scancode, action, mods):
         
 
     elif key == GLFW_KEY_DELETE and action == GLFW_PRESS: #Pressing Delete resets the figure
-        xrot = 0    # x rotation
-        yrot = 0    # y rotation
-        xspeed = 0  # x rotation speed
-        yspeed = 0  # y rotation speed
+        print("Rotation is back to 0.0 and model is moved to center.")
+        xrot = 0.0    # x rotation
+        yrot = 0.0    # y rotation
+        xspeed = 0.0  # x rotation speed
+        yspeed = 0.0  # y rotation speed
         z = -5.0
         xas = 0.0
         yas = 0.0
@@ -207,12 +218,20 @@ def key_callback(window, key, scancode, action, mods):
     elif key == 340:  #Ignore the shift key
         pass
     elif key == GLFW_ENTER:  # For moving through the different meshes
+        print("Next model.")
         if i >= len(indices):
             i = 0
         else:
             i += 1
         vertices = np.array(shapes[i].vertices)
         indices = np.array(shapes[i].faces)
+    elif key == GLFW_KEY_V:
+        if DRAW_EDGES == False:
+            print("Edges are drawn.")
+            DRAW_EDGES = True
+        else: 
+            print("Edges are not drawn.")
+            DRAW_EDGES = False
     else:
         print("Key %d pressed. No action there yet.\n"%(key))
 
