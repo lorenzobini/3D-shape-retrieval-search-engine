@@ -7,7 +7,7 @@ from collections import defaultdict
 
 # Imports from other files
 from src.shape import Shape
-from src.normalize import  normalizeData
+from src.normalize import normalizeData
 from src.utils import *
 
 
@@ -82,7 +82,7 @@ def import_data():
 
                 if shape is not None:
                     # Assigning the class if present
-                    shape = calculateBox(shape)
+                    shape = calculate_box(shape)
                     shape_id = str(shape.get_id())
                     shape.set_class(labels[shape_id][0], labels[shape_id][1])  # class id, class name
                     # Appending to list

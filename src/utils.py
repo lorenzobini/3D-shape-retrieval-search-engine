@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import os
 import re
 
+
 # Parse a .off file
 def read_off(file):
     if 'OFF' != file.readline().strip():
@@ -11,6 +12,7 @@ def read_off(file):
     verts = [[float(s) for s in file.readline().strip().split(' ')] for i_vert in range(n_verts)]
     faces = [[int(s) for s in file.readline().strip().split(' ')] for i_face in range(n_faces)]
     return verts, faces, n_verts, n_faces
+
 
 # Parse a .ply file
 def parse_ply(file):
@@ -40,6 +42,7 @@ def parse_ply(file):
     faces = [[int(s) for s in file.readline().strip().split(' ')] for i_face in range(n_faces)]
     return verts, faces, n_verts, n_faces
 
+
 # Read the classes from the .cla file
 def read_classes(file, class_list):
     if 'PSB' not in file.readline().strip():
@@ -64,6 +67,7 @@ def read_classes(file, class_list):
 
     return class_dict, class_list
 
+
 # Read the .txt field and retrieve information
 def read_info(file, shape):
     for line in file:
@@ -83,7 +87,8 @@ def read_info(file, shape):
 
     return shape
 
-def calculateBox(shape):
+
+def calculate_box(shape):
     # Setting the correct id for the shape so the 
     vertices = shape.get_vertices()
     x_coords = [x[0] for x in vertices]
@@ -93,8 +98,6 @@ def calculateBox(shape):
     shape.set_bounding_box(min(x_coords),min(y_coords), min(z_coords), max(x_coords), max(y_coords), max(z_coords))
     return shape
 
-
-    
 
 # Code to show a histogram
 def show_graph(faces, avg, sd):
@@ -112,6 +115,7 @@ def show_graph(faces, avg, sd):
     plt.title('Normal Distribution Histogram', fontsize=15)
 
     plt.show()
+
 
 # Function to find a file given a certain path
 def find(name, path):
