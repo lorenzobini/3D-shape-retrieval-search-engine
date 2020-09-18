@@ -1,6 +1,10 @@
 import glfw # If getting error remove this line
+from blis.cy import __pyx_unpickle___Pyx_EnumMeta
+import lib.PyMesh.python.pymesh as mesh
 from OpenGL.GL import *
 from OpenGL.GL.shaders import compileProgram, compileShader
+
+from PyMesh.python import pymesh
 from src.dataLoader import import_data
 import numpy as np
 import time
