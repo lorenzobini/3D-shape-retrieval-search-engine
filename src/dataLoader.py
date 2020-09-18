@@ -1,8 +1,3 @@
-import numpy as np
-import matplotlib.pyplot as plt
-import os
-import OpenGL
-import re
 from collections import defaultdict
 
 # Imports from other files
@@ -11,7 +6,7 @@ from src.normalize import normalizeData
 from src.utils import *
 
 
-def import_data():
+def import_data() -> ([Shape], defaultdict):
     DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
 
     # TODO: to import the entire dataset remove the '0' and the redundant os.sep, REMOVE FOR FINAL PROGRAM
