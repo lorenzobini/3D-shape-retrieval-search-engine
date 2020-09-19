@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-from utils import * 
+from src.utils import *
 import open3d as o3d
 
 # Normalizes the data based on Module 4 of the INFOMR course
