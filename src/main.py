@@ -5,10 +5,10 @@ import numpy as np
 import time
 
 # Imports from other files
-# from src.dataLoader import import_data
-# from src.shape import Shape
-from dataLoader import import_data
-from shape import Shape
+from src.dataLoader import import_data
+from src.shape import Shape
+# from dataLoader import import_data
+# from shape import Shape
 
 
 # Define needed global variabels for rotation, translation, zooming

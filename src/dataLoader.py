@@ -1,13 +1,13 @@
 from collections import defaultdict
 
 # Imports from other files,
-# from src.shape import Shape
-# from src.normalize import normalizeData
-# from src.utils import *
+from src.shape import Shape
+from src.normalize import normalizeData
+from src.utils import *
 
-from shape import Shape
-from normalize import normalizeData
-from utils import *
+# from shape import Shape
+# from normalize import normalizeData
+# from utils import *
 
 
 def import_data() -> ([Shape], defaultdict):
