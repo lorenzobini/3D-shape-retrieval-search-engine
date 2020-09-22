@@ -4,6 +4,7 @@ from collections import defaultdict
 from src.shape import Shape
 from src.normalize import normalizeData
 from src.utils import *
+import open3d as o3d
 
 # from shape import Shape
 # from normalize import normalizeData
@@ -14,26 +15,18 @@ def import_data() -> ([Shape], defaultdict):
     DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
 
     # TODO: to import the entire dataset remove the '0' and the redundant os.sep, REMOVE FOR FINAL PROGRAM
-    DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep  
+    DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep + '0' + os.sep
     DATA_CLASSIFICATION_PRINCETON = DATA_PATH + 'benchmark' + os.sep + 'classification' + os.sep + 'v1' + os.sep + 'coarse1' + os.sep
-    
 
     SAVED_DATA = DATA_PATH + 'cache' + os.sep
     NORMALIZED_DATA = SAVED_DATA + 'processed_data' + os.sep
 
-    if not os.listdir(NORMALIZED_DATA):
-        print("First startup, normalizing the data.")
-        normalizeData(DATA_SHAPES_PRICETON, NORMALIZED_DATA)
-    
-    if(
-       not(
-          os.path.isfile(SAVED_DATA + 'shapes.NPY') and
-          os.path.isfile(SAVED_DATA + 'labels.NPY') and
-          os.path.isfile(SAVED_DATA + 'n_verts.NPY') and
-          os.path.isfile(SAVED_DATA + 'n_faces.NPY')
-       )):
+    FORCE_IMPORT = False
+    if FORCE_IMPORT or len(os.listdir(NORMALIZED_DATA)) == 0:
+        # Normalised shapes not present, importing and normalising dataset
+
         print('Importing shapes and labels . . .')
-                  
+
         shapes = []
         labels = defaultdict(lambda def_value: None)
         tot_verts = []
@@ -53,55 +46,80 @@ def import_data() -> ([Shape], defaultdict):
         labels = temp1
 
         # navigating through the dataset to find .off and .ply files
-        for dirName, subdirList, objList in os.walk(NORMALIZED_DATA):
+        for dirName, subdirList, objList in os.walk(DATA_SHAPES_PRICETON):
             # Importing the shape first
             shape = None
             for obj in objList:
                 if obj.endswith('.off'):
                     file = open(dirName + '\\' + obj, "r")
                     verts, faces, n_verts, n_faces = read_off(file)
+                    mesh = o3d.io.read_triangle_mesh(dirName + '\\' + obj)
                     tot_verts.append(n_verts)
                     tot_faces.append(n_faces)
 
-                    shape = Shape(verts, faces)
+                    shape = Shape(verts, faces, mesh)
 
                 elif (obj.endswith('.ply')):
                     file = open(dirName + '\\' + obj, "r")
                     verts, faces, n_verts, n_faces = parse_ply(file)
+                    mesh = o3d.io.read_triangle_mesh(dirName + '\\' + obj)
                     tot_verts.append(n_verts)
                     tot_faces.append(n_faces)
 
-                    shape = Shape(verts, faces)
-                
-                # Find the text data of the object
-                name = obj.split('.')[0]
-                path = find(name + '_info.txt', DATA_SHAPES_PRICETON)
-                file = open(path, "r")
-                shape = read_info(file, shape)
+                    shape = Shape(verts, faces, mesh)
 
-                if shape is not None:
-                    # Assigning the class if present
-                    shape = calculate_box(shape)
-                    shape_id = str(shape.get_id())
-                    shape.set_class(labels[shape_id][0], labels[shape_id][1])  # class id, class name
-                    # Appending to list
-                    shapes.append(shape)
+            # Importing extra information
+            for obj in objList:
+                if obj.endswith('.txt'):
+                    file = open(dirName + '\\' + obj, "r")
+                    shape = read_info(file, shape)
 
+            if shape is not None:
+                # Assigning the class if present
+                shape_class = labels[str(shape.get_id())]
+                shape.set_class(shape_class[1], shape_class[0])  # class id, class name
+                # Appending to list
+                shapes.append(shape)
+
+        np.save(SAVED_DATA + 'shapes.npy', remove_meshes(shapes))
         np.save(SAVED_DATA + 'labels.npy', labels)
-        np.save(SAVED_DATA + 'shapes.npy', shapes)
         np.save(SAVED_DATA + 'n_verts.npy', tot_verts)
         np.save(SAVED_DATA + 'n_faces.npy', tot_faces)
 
         print('Image train and val sets successfully imported.')
+        print('Normalising shapes . . .')
+
+        shapes, tot_verts, tot_faces = normalizeData(shapes)
+
+        for shape in remove_meshes(shapes):
+            write_off(NORMALIZED_DATA, shape)
+            np.save(NORMALIZED_DATA + 'n' + str(shape.get_id()) + '.npy', [shape])
+        # TODO: override tot_verts and tot_faces in file?
+
+        print("Shapes normalised succesfully.")
+
     else:
-        print('Loading shapes and labels from cache . . .')
+        # Normalised shapes in cache, loading them directly
+        print('Loading normalised shapes and labels from cache . . .')
 
         labels = np.load(SAVED_DATA + 'labels.npy', allow_pickle=True)
-        shapes = np.load(SAVED_DATA + 'shapes.npy', allow_pickle=True)
         tot_verts = np.load(SAVED_DATA + 'n_verts.npy', allow_pickle=True)
         tot_faces = np.load(SAVED_DATA + 'n_faces.npy', allow_pickle=True)
 
-        print('Existing image train and val sets successfully loaded.')
+        shapes = []
+        for filename in os.listdir(NORMALIZED_DATA):
+            if filename.endswith('.npy'):
+                shape = np.load(NORMALIZED_DATA + filename,  allow_pickle=True)[0]
+
+                off_file_name = 'n' + str(shape.get_id()) + '.off'
+                mesh = o3d.io.read_triangle_mesh(NORMALIZED_DATA + off_file_name)
+                shape.set_mesh(mesh)
+
+                shapes.append(shape)
+
+        print("Existing normalised image set successfully loaded.")
+
+
 
     # Computing average number of vertices and standard deviation
     avg_verts = np.mean(tot_verts)

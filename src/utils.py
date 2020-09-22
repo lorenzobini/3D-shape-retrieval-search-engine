@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import re
+import copy
 
 
 # Parse a .off file
@@ -123,3 +124,33 @@ def find(name, path):
     for root, dirs, files in os.walk(path):
         if name in files:
             return os.path.join(root, name)
+
+
+# Function that removes TriangleMesh objects for saving
+def remove_meshes(shapes):
+    new_shapes = []
+    for shape in shapes:
+        new_shape = copy.deepcopy(shape)
+        new_shape.delete_mesh()
+        new_shapes.append(new_shape)
+
+    return new_shapes
+
+
+# Function to write off file on disk
+def write_off(path, shape):
+    verts = shape.get_vertices()
+    faces = shape.get_faces()
+
+    f = open(path + 'n' + str(shape.get_id()) + ".off", "w+")
+    f.write("OFF\n")
+    f.write(str(len(verts)) + " " + str(len(faces)) + " " + "0\n")
+    for i in range(0, len(verts)):
+        vert = [str(x) for x in verts[i]]
+        vert = ' '.join(vert)
+        f.write(vert + '\n')
+    for i in range(0, len(faces)):
+        face = [str(x) for x in faces[i]]
+        face = ' '.join(face)
+        f.write(face + '\n')
+    f.close()

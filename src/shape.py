@@ -1,5 +1,6 @@
-# from src.boundingbox import BoundingBox
-from boundingbox import BoundingBox
+from open3d import geometry
+from src.boundingbox import BoundingBox
+#from boundingbox import BoundingBox
 
 
 class Shape:
@@ -7,6 +8,7 @@ class Shape:
     id: int
     vertices: [float]
     faces: [int]
+    mesh: geometry.TriangleMesh
     n_verts: int
     n_faces: int
     faces_types: int
@@ -25,10 +27,11 @@ class Shape:
     principle_values: (float, float, float)
     # -------------------------------------------------------
 
-    def __init__(self, vertices, faces):
+    def __init__(self, vertices, faces, mesh):
         self.id = None
         self.vertices = vertices
         self.faces = faces
+        self.mesh = mesh
         self.n_verts = len(vertices)
         self.n_faces = len(faces)
         self.faces_types = list(set([x[0] for x in faces]))
@@ -68,6 +71,17 @@ class Shape:
 
     def get_faces(self) -> [int]:
         return self.faces
+
+    # Mesh
+
+    def set_mesh(self, mesh):
+        self.mesh = mesh
+
+    def get_mesh(self) -> geometry.TriangleMesh:
+        return self.mesh
+
+    def delete_mesh(self):
+        self.mesh = None
 
     # Counts
 

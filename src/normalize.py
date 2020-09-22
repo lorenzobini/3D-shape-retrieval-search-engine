@@ -5,7 +5,14 @@ from src.utils import *
 import open3d as o3d
 
 # Normalizes the data based on Module 4 of the INFOMR course
-def normalizeData(data_path, new_path):
+def normalizeData(shapes):
+    DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
+    DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep + '0' + os.sep
+    DATA_CLASSIFICATION_PRINCETON = DATA_PATH + 'benchmark' + os.sep + 'classification' + os.sep + 'v1' + os.sep + 'coarse1' + os.sep
+
+    SAVED_DATA = DATA_PATH + 'cache' + os.sep
+    NORMALIZED_DATA = SAVED_DATA + 'processed_data' + os.sep
+
     write = False
 
     tot_verts = []
@@ -13,86 +20,40 @@ def normalizeData(data_path, new_path):
     tot_new_verts = []
     tot_new_faces = []
 
-    skip = False
-    for dirName, subdirList, objList in os.walk(data_path):
-        for obj in objList:
-            print(obj)
-            if obj.endswith('.off'):
-                file = open(dirName + '\\' + obj, "r")
-                verts, faces, n_verts, n_faces = read_off(file)
-                if n_verts >= 10000:
-                    print(obj +" skipped")
-                    skip = True
-                else:
-                    tot_verts.append(n_verts)
-                    tot_faces.append(n_faces)
-                    name = obj
+    for shape in shapes:
 
-                # Create Open3D mesh object
-                mesh = o3d.io.read_triangle_mesh(dirName + '\\' + obj)
-            elif (obj.endswith('.ply')):
-                file = open(dirName + '\\' + obj, "r")
-                verts, faces, n_verts, n_faces = parse_ply(file)
-                if n_verts >= 10000:
-                    skip = True
-                else:
-                    tot_verts.append(n_verts)
-                    tot_faces.append(n_faces)
+        # TODO: determine suitable parameters
+        avg_verts = 5000
+        q1_verts = 2500
+        q3_verts = 7500
 
-                # Create Open3D mesh object
-                mesh = o3d.io.read_triangle_mesh(dirName + '\\' + obj)
-            elif obj.endswith('.txt'):
-                if skip:
-                    write = False
-                    skip = False
-                else:
-                    file = open(dirName + '\\'+ obj, "r")
-                    center = read_txt(file)
-                    write = True
-        
-        # Write to new file once all the information is gathered
-        if write and not skip:
-            
-            # TODO change to dynamic values
-            avg_verts = 5000
-            q1_verts = 2500
-            q3_verts = 7500
+        # print(f'Before refinement the mesh has {len(mesh.vertices)} vertices and {len(mesh.triangles)} triangles')
 
-            # print(f'Before refinement the mesh has {len(mesh.vertices)} vertices and {len(mesh.triangles)} triangles')
-          
-            new_mesh, new_n_verts, new_n_faces = remeshing(mesh, avg_verts, q1_verts, q3_verts)
-            center = new_mesh.get_center()
-            
-            tot_new_verts.append(new_n_verts)
-            tot_new_faces.append(new_n_faces)
+        new_mesh, new_n_verts, new_n_faces = remeshing(shape.get_mesh(), avg_verts, q1_verts, q3_verts)
+        center = new_mesh.get_center()
 
-            new_verts = new_mesh.vertices
-            new_faces = new_mesh.triangles
+        tot_new_verts.append(new_n_verts)
+        tot_new_faces.append(new_n_faces)
+
+        new_verts = new_mesh.vertices
+        new_faces = new_mesh.triangles
 
 
-            new_verts = toCenter(new_verts, center)
-            # rotate based on PCA
-            # new_verts = rotatePCA(new_verts)
+        new_verts = toCenter(new_verts, center)
+        # rotate based on PCA
+        # new_verts = rotatePCA(new_verts)
 
-            # Scale to bounding box
-            # new_verts = scaleToBox(new_verts)
+        # Scale to bounding box
+        # new_verts = scaleToBox(new_verts)
 
-            # Write to a new .OFF file
-            f= open(new_path + name,"w+")
-            f.write("OFF\n")
-            f.write(str(len(new_verts))+" "+ str(len(new_faces)) + " " + "0\n")
-            for i in range(0, len(new_verts)):
-                vert = [str(x) for x in new_verts[i]]
-                vert = ' '.join(vert)
-                f.write(vert + '\n')
-            for i in range(0, len(new_faces)):
-                face = [ str(x) for x in new_faces[i]]
-                face = ' '.join(face)
-                f.write(face + '\n')
-            f.close()
-            
-            # Reset for next object
-            write = False   
+        # Updating shape
+        shape.set_vertices(np.asarray(new_mesh.vertices).tolist())
+        shape.set_faces(np.asarray(new_mesh.triangles).tolist())
+        shape.set_center(tuple(new_mesh.get_center()))
+        # TODO: update avg_depth? bounding_box? scale?
+
+    return shapes, tot_new_verts, tot_new_faces
+
 
     # Computing average number of vertices and standard deviation
     avg_faces = np.mean(tot_faces)
@@ -130,6 +91,7 @@ def read_txt(file):
             break
     return center
 
+
 # Translate each vertice based on the center to the origin. 
 def toCenter(verts, center):
      # Normalize to center. 
@@ -137,6 +99,7 @@ def toCenter(verts, center):
     for i in range(0, len(verts)):
         new_verts[i] = [vertice - coord for vertice, coord in zip(verts[i], center)]   
     return new_verts
+
 
 # Tryout PCA function
 def rotatePCA(verts):
@@ -159,7 +122,8 @@ def rotatePCA(verts):
     #     print(new_verts[i])
     #     new_verts[i] = verts[i]
     #     print(new_verts[i])
-    
+
+
 def rotation_matrix_from_vectors(vec1, vec2):
     """ Find the rotation matrix that aligns vec1 to vec2
     :param vec1: A 3d "source" vector
@@ -175,5 +139,3 @@ def rotation_matrix_from_vectors(vec1, vec2):
     return rotation_matrix    
 
 
-
-    
