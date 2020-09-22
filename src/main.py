@@ -1,10 +1,14 @@
 import glfw # If getting error remove this line
 from OpenGL.GL import *
 from OpenGL.GL.shaders import compileProgram, compileShader
-from src.dataLoader import import_data
-from src.shape import Shape
 import numpy as np
 import time
+
+# Imports from other files
+# from src.dataLoader import import_data
+# from src.shape import Shape
+from dataLoader import import_data
+from shape import Shape
 
 
 # Define needed global variabels for rotation, translation, zooming
@@ -87,21 +91,17 @@ def main():
         glRotatef(xrot, 1.0, 0.0, 0.0)			# Rotate On The X Axis
         glRotatef(yrot, 0.0, 1.0, 0.0)			# Rotate On The Y Axis
         
-        
         for index in indices:
             # Allows handling of quads and triangles
-            if index[0] == 3:
-                glBegin(GL_TRIANGLES)
-            elif index[0] == 4:
-                glBegin(GL_QUADS)
+            glBegin(GL_TRIANGLES)
             glColor3f(0.5,0.5,0.5)
-            for number in index[1:]:
+            for number in index:
                 glVertex3f(vertices[number][0], vertices[number][1], vertices[number][2])
             glEnd()
         
         if DRAW_EDGES: 
             for index in indices:
-                # Allows handling of quads and triangles
+                # Draws the lines for the vertices
                 glBegin(GL_LINES)
                 glColor3f(0.0,0.0,0.0)
                 for number in index[1:]:

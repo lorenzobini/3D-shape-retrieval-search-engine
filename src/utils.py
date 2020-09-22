@@ -58,10 +58,11 @@ def read_classes(file, class_list):
             pass
         elif len(line) > 2:
             class_name = str(line[0])
+            # if the class not in the class_list add it
             if class_name  not in class_list:
                 class_list.append(class_name)
         else: # add the class to the number of the model
-            class_id = class_list.index(class_name)
+            class_id = class_list.index(class_name) # give class id based on class_list index
             class_dict[line[0]] = (class_id, class_name)
             modelcount += 1
 
@@ -101,18 +102,18 @@ def calculate_box(shape):
 
 # Code to show a histogram
 def show_graph(faces, avg, sd):
-    hist, bin_edges = np.histogram(faces, bins=range(0, 40000, 5000))
+    hist, bin_edges = np.histogram(faces, bins=range(0, 20000, 500))
 
     plt.figure(figsize=[10, 8])
 
-    plt.bar(bin_edges[:-1], hist, width=200, color='#0504aa', alpha=0.7)
+    plt.bar(bin_edges[:-1], hist, width=500, color='#0504aa', alpha=0.7)
     plt.xlim(min(bin_edges), max(bin_edges))
     plt.grid(axis='y', alpha=0.75)
     plt.xlabel('Number of Vertices', fontsize=15)
     plt.ylabel('Frequency', fontsize=15)
     plt.xticks(fontsize=15)
     plt.yticks(fontsize=15)
-    plt.title('Normal Distribution Histogram', fontsize=15)
+    plt.title('Vertices Distribution Histogram', fontsize=15)
 
     plt.show()
 

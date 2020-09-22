@@ -1,16 +1,20 @@
 from collections import defaultdict
 
-# Imports from other files
-from src.shape import Shape
-from src.normalize import normalizeData
-from src.utils import *
+# Imports from other files,
+# from src.shape import Shape
+# from src.normalize import normalizeData
+# from src.utils import *
+
+from shape import Shape
+from normalize import normalizeData
+from utils import *
 
 
 def import_data() -> ([Shape], defaultdict):
     DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
 
     # TODO: to import the entire dataset remove the '0' and the redundant os.sep, REMOVE FOR FINAL PROGRAM
-    DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep  + '0' + os.sep
+    DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep  
     DATA_CLASSIFICATION_PRINCETON = DATA_PATH + 'benchmark' + os.sep + 'classification' + os.sep + 'v1' + os.sep + 'coarse1' + os.sep
     
 
@@ -100,13 +104,13 @@ def import_data() -> ([Shape], defaultdict):
         print('Existing image train and val sets successfully loaded.')
 
     # Computing average number of vertices and standard deviation
-    avg_faces = np.mean(tot_faces)
-    sd_faces = np.std(tot_faces)
+    avg_verts = np.mean(tot_verts)
+    sd_verts = np.std(tot_verts)
 
     # Showing the normal distribution of vertices on screen
-    SHOW_GRAPH = False
+    SHOW_GRAPH = True
     if SHOW_GRAPH:
-        show_graph(tot_faces, avg_faces, sd_faces)
+        show_graph(tot_verts, avg_verts, sd_verts)
 
     return shapes, labels
 

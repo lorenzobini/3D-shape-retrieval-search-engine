@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-from src.utils import *
+from utils import * 
 import open3d as o3d
 
 # Normalizes the data based on Module 4 of the INFOMR course
@@ -13,49 +13,64 @@ def normalizeData(data_path, new_path):
     tot_new_verts = []
     tot_new_faces = []
 
+    skip = False
     for dirName, subdirList, objList in os.walk(data_path):
         for obj in objList:
+            print(obj)
             if obj.endswith('.off'):
                 file = open(dirName + '\\' + obj, "r")
                 verts, faces, n_verts, n_faces = read_off(file)
-                tot_verts.append(n_verts)
-                tot_faces.append(n_faces)
-                name = obj
+                if n_verts >= 10000:
+                    print(obj +" skipped")
+                    skip = True
+                else:
+                    tot_verts.append(n_verts)
+                    tot_faces.append(n_faces)
+                    name = obj
 
                 # Create Open3D mesh object
                 mesh = o3d.io.read_triangle_mesh(dirName + '\\' + obj)
             elif (obj.endswith('.ply')):
                 file = open(dirName + '\\' + obj, "r")
                 verts, faces, n_verts, n_faces = parse_ply(file)
-                tot_verts.append(n_verts)
-                tot_faces.append(n_faces)
+                if n_verts >= 10000:
+                    skip = True
+                else:
+                    tot_verts.append(n_verts)
+                    tot_faces.append(n_faces)
 
                 # Create Open3D mesh object
                 mesh = o3d.io.read_triangle_mesh(dirName + '\\' + obj)
             elif obj.endswith('.txt'):
-                file = open(dirName + '\\'+ obj, "r")
-                center = read_txt(file)
-                write = True
+                if skip:
+                    write = False
+                    skip = False
+                else:
+                    file = open(dirName + '\\'+ obj, "r")
+                    center = read_txt(file)
+                    write = True
         
         # Write to new file once all the information is gathered
-        if write:
+        if write and not skip:
             
             # TODO change to dynamic values
             avg_verts = 5000
             q1_verts = 2500
             q3_verts = 7500
 
-            print(f'Before refinement the mesh has {len(mesh.vertices)} vertices and {len(mesh.triangles)} triangles')
-            # Move the object to the center
-            new_verts = toCenter(verts, center)
+            # print(f'Before refinement the mesh has {len(mesh.vertices)} vertices and {len(mesh.triangles)} triangles')
+          
             new_mesh, new_n_verts, new_n_faces = remeshing(mesh, avg_verts, q1_verts, q3_verts)
-
+            center = new_mesh.get_center()
+            
             tot_new_verts.append(new_n_verts)
             tot_new_faces.append(new_n_faces)
 
             new_verts = new_mesh.vertices
             new_faces = new_mesh.triangles
 
+
+            new_verts = toCenter(new_verts, center)
             # rotate based on PCA
             # new_verts = rotatePCA(new_verts)
 
@@ -71,9 +86,10 @@ def normalizeData(data_path, new_path):
                 vert = ' '.join(vert)
                 f.write(vert + '\n')
             for i in range(0, len(new_faces)):
-                face = [str(x) for x in new_faces[i]]
+                face = [ str(x) for x in new_faces[i]]
                 face = ' '.join(face)
                 f.write(face + '\n')
+            f.close()
             
             # Reset for next object
             write = False   
@@ -84,8 +100,8 @@ def normalizeData(data_path, new_path):
     q1_verts = np.percentile(tot_verts, 25)
     q3_verts = np.percentile(tot_verts, 75)
 
-    print(f'Before refinement: average number of vertices is: {np.mean(tot_verts)} with sd of: {np.std(tot_verts)} \n and average number of faces is: {np.mean(tot_faces)} with sd of: {np.std(tot_faces)}')
-    print(f'After refinement: average number of vertices is: {np.mean(tot_new_verts)} with sd of: {np.std(tot_new_verts)} \n and average number of faces is: {np.mean(tot_new_faces)} with sd of: {np.std(tot_new_faces)}')
+    # print(f'Before refinement: average number of vertices is: {np.mean(tot_verts)} with sd of: {np.std(tot_verts)} \n and average number of faces is: {np.mean(tot_faces)} with sd of: {np.std(tot_faces)}')
+    # print(f'After refinement: average number of vertices is: {np.mean(tot_new_verts)} with sd of: {np.std(tot_new_verts)} \n and average number of faces is: {np.mean(tot_new_faces)} with sd of: {np.std(tot_new_faces)}')
     
 
 # Remeshes shapes that 
@@ -97,7 +113,7 @@ def remeshing(mesh, avg_verts, q1_verts, q3_verts):
         elif len(mesh.vertices) >= avg_verts:
             mesh = mesh.simplify_quadric_decimation(target_number_of_triangles=avg_verts)
             
-    print(f'After simplifying the mesh has {len(mesh.vertices)} vertices and {len(mesh.triangles)} triangles')
+    # print(f'After simplifying the mesh has {len(mesh.vertices)} vertices and {len(mesh.triangles)} triangles')
     n_verts = len(mesh.vertices)
     n_faces = len(mesh.triangles)
     

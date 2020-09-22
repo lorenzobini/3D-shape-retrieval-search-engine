@@ -1,4 +1,5 @@
-from src.boundingbox import BoundingBox
+# from src.boundingbox import BoundingBox
+from boundingbox import BoundingBox
 
 
 class Shape:
@@ -30,7 +31,7 @@ class Shape:
         self.faces = faces
         self.n_verts = len(vertices)
         self.n_faces = len(faces)
-        self.faces_types = list(set([x[0] for x in faces]))[0]
+        self.faces_types = list(set([x[0] for x in faces]))
         self.bbox = None
 
     # ID
