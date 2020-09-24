@@ -90,15 +90,13 @@ def read_info(file, shape):
     return shape
 
 
-def calculate_box(shape):
-    # Setting the correct id for the shape so the 
-    vertices = shape.get_vertices()
+def calculate_box(vertices):
+    
     x_coords = [x[0] for x in vertices]
     y_coords = [x[1] for x in vertices]
     z_coords = [x[2] for x in vertices]
 
-    shape.set_bounding_box(min(x_coords),min(y_coords), min(z_coords), max(x_coords), max(y_coords), max(z_coords))
-    return shape
+    return [min(x_coords),min(y_coords), min(z_coords), max(x_coords), max(y_coords), max(z_coords)]
 
 
 # Code to show a histogram
@@ -152,5 +150,5 @@ def write_off(path, shape):
     for i in range(0, len(faces)):
         face = [str(x) for x in faces[i]]
         face = ' '.join(face)
-        f.write(face + '\n')
+        f.write('3 '+ face + '\n')
     f.close()

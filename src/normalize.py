@@ -4,8 +4,9 @@ import os
 from src.utils import *
 import open3d as o3d
 
+
 # Normalizes the data based on Module 4 of the INFOMR course
-def normalizeData(shapes):
+def normalize_data(shapes):
     DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
     DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep + '0' + os.sep
     DATA_CLASSIFICATION_PRINCETON = DATA_PATH + 'benchmark' + os.sep + 'classification' + os.sep + 'v1' + os.sep + 'coarse1' + os.sep
@@ -30,24 +31,28 @@ def normalizeData(shapes):
         # print(f'Before refinement the mesh has {len(mesh.vertices)} vertices and {len(mesh.triangles)} triangles')
 
         new_mesh, new_n_verts, new_n_faces = remeshing(shape.get_mesh(), avg_verts, q1_verts, q3_verts)
-        center = new_mesh.get_center()
-
+                
         tot_new_verts.append(new_n_verts)
         tot_new_faces.append(new_n_faces)
 
+
         new_verts = new_mesh.vertices
-        new_faces = new_mesh.triangles
-
-
-        new_verts = toCenter(new_verts, center)
-        # rotate based on PCA
-        # new_verts = rotatePCA(new_verts)
+        
+        # Translate to center
+        center = new_mesh.get_center()
+        new_mesh = new_mesh.translate(-center)
 
         # Scale to bounding box
-        # new_verts = scaleToBox(new_verts)
+        bbox = [abs(x) for x in calculate_box(new_verts)]
+        ratio = (1/max(bbox))
+        new_mesh.scale(ratio, center=(0,0,0))
+       
+        # rotate based on PCA
+        new_mesh = rotate_PCA(new_mesh)
+
 
         # Updating shape
-        shape.set_vertices(np.asarray(new_mesh.vertices).tolist())
+        shape.set_vertices(np.asarray(new_mesh.vertices))
         shape.set_faces(np.asarray(new_mesh.triangles).tolist())
         shape.set_center(tuple(new_mesh.get_center()))
         # TODO: update avg_depth? bounding_box? scale?
@@ -92,17 +97,7 @@ def read_txt(file):
     return center
 
 
-# Translate each vertice based on the center to the origin. 
-def toCenter(verts, center):
-     # Normalize to center. 
-    new_verts = verts
-    for i in range(0, len(verts)):
-        new_verts[i] = [vertice - coord for vertice, coord in zip(verts[i], center)]   
-    return new_verts
-
-
-# Tryout PCA function
-def rotatePCA(verts):
+def calc_eigenvectors(verts):
     A = np.zeros((3, len(verts)))
     A[0] = [x[0] for x in verts]
     A[1] = [x[1] for x in verts]
@@ -112,10 +107,29 @@ def rotatePCA(verts):
     
     eigenvalues, eigenvectors = np.linalg.eig(A_cov)
 
+    return eigenvalues, eigenvectors
+
+
+# Tryout PCA function
+def rotate_PCA(mesh):
+    
+    eigenvalues, eigenvectors = calc_eigenvectors(mesh.vertices)
+    
     min_eigen = np.argmin(eigenvalues)
     max_eigen = np.argmax(eigenvalues)
-    
-    
+    mid_eigen = (set([0,1,2]) - set([max_eigen, min_eigen])).pop()
+
+
+    verts = mesh.vertices
+    new_verts = verts
+    for i in range(0, len(verts)):
+        v = verts[i]
+        p1 = np.dot(v, eigenvectors[max_eigen])
+        p2 = np.dot(v, eigenvectors[mid_eigen])
+        p3 = np.dot(v, eigenvectors[min_eigen])
+        new_verts[i] = [p1, p2, p3]
+    mesh.vertices = new_verts
+    return mesh
     
     # new_verts = verts
     # for i in range(0, len(verts)):

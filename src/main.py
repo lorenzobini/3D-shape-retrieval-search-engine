@@ -85,12 +85,13 @@ def main():
     
         glMatrixMode(GL_MODELVIEW)
         glPushMatrix() 
+        glEnable(GL_POLYGON_OFFSET_FILL)
+        glPolygonOffset(1.0, 2)
         # Translate based on the xas, yas, and z values.
         glTranslatef(xas, yas, z)
 
         glRotatef(xrot, 1.0, 0.0, 0.0)			# Rotate On The X Axis
         glRotatef(yrot, 0.0, 1.0, 0.0)			# Rotate On The Y Axis
-        
         for index in indices:
             # Allows handling of quads and triangles
             glBegin(GL_TRIANGLES)
@@ -107,6 +108,7 @@ def main():
                 for number in index[1:]:
                     glVertex3f(vertices[number][0], vertices[number][1], vertices[number][2])
                 glEnd()
+        glDisable(GL_POLYGON_OFFSET_FILL)
         glPopMatrix()
                
         # Add the speed to the rotation value, is increased by keypressing.
@@ -218,11 +220,11 @@ def key_callback(window, key, scancode, action, mods):
     elif key == 340:  #Ignore the shift key
         pass
     elif key == GLFW_ENTER:  # For moving through the different meshes
-        print("Next model.")
-        if i >= len(indices):
+        if i == len(indices) or len(indices) == 1:
             i = 0
         else:
             i += 1
+        print("Next model which is: " + str(i))
         vertices = np.array(shapes[i].vertices)
         indices = np.array(shapes[i].faces)
     elif key == GLFW_KEY_V:

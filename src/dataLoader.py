@@ -2,26 +2,27 @@ from collections import defaultdict
 
 # Imports from other files,
 from src.shape import Shape
-from src.normalize import normalizeData
+from src.normalize import normalize_data
 from src.utils import *
 import open3d as o3d
 
 # from shape import Shape
 # from normalize import normalizeData
 # from utils import *
+# import open3d as o3d
 
 
 def import_data() -> ([Shape], defaultdict):
     DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
 
     # TODO: to import the entire dataset remove the '0' and the redundant os.sep, REMOVE FOR FINAL PROGRAM
-    DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep + '0' + os.sep
+    DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep  + '0' + os.sep #+ 'm5' + os.sep
     DATA_CLASSIFICATION_PRINCETON = DATA_PATH + 'benchmark' + os.sep + 'classification' + os.sep + 'v1' + os.sep + 'coarse1' + os.sep
 
     SAVED_DATA = DATA_PATH + 'cache' + os.sep
     NORMALIZED_DATA = SAVED_DATA + 'processed_data' + os.sep
 
-    FORCE_IMPORT = False
+    FORCE_IMPORT = True
     if FORCE_IMPORT or len(os.listdir(NORMALIZED_DATA)) == 0:
         # Normalised shapes not present, importing and normalising dataset
 
@@ -89,7 +90,7 @@ def import_data() -> ([Shape], defaultdict):
         print('Image train and val sets successfully imported.')
         print('Normalising shapes . . .')
 
-        shapes, tot_verts, tot_faces = normalizeData(shapes)
+        shapes, tot_verts, tot_faces = normalize_data(shapes)
 
         for shape in remove_meshes(shapes):
             write_off(NORMALIZED_DATA, shape)
@@ -111,10 +112,9 @@ def import_data() -> ([Shape], defaultdict):
             if filename.endswith('.npy'):
                 shape = np.load(NORMALIZED_DATA + filename,  allow_pickle=True)[0]
 
-                off_file_name = 'n' + str(shape.get_id()) + '.off'
-                mesh = o3d.io.read_triangle_mesh(NORMALIZED_DATA + off_file_name)
+                off_file_name = 'n' + str(shape.get_id()) + '.off'                
+                mesh = o3d.io.read_triangle_mesh(NORMALIZED_DATA  + off_file_name)
                 shape.set_mesh(mesh)
-
                 shapes.append(shape)
 
         print("Existing normalised image set successfully loaded.")
@@ -126,7 +126,7 @@ def import_data() -> ([Shape], defaultdict):
     sd_verts = np.std(tot_verts)
 
     # Showing the normal distribution of vertices on screen
-    SHOW_GRAPH = True
+    SHOW_GRAPH = False
     if SHOW_GRAPH:
         show_graph(tot_verts, avg_verts, sd_verts)
 
