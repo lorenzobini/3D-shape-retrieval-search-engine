@@ -4,15 +4,16 @@ import os
 from src.utils import *
 import open3d as o3d
 
+DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
+DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep + '0' + os.sep
+DATA_CLASSIFICATION_PRINCETON = DATA_PATH + 'benchmark' + os.sep + 'classification' + os.sep + 'v1' + os.sep + 'coarse1' + os.sep
+
+SAVED_DATA = DATA_PATH + 'cache' + os.sep
+NORMALIZED_DATA = SAVED_DATA + 'processed_data' + os.sep
+
 
 # Normalizes the data based on Module 4 of the INFOMR course
 def normalize_data(shapes):
-    DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
-    DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep + '0' + os.sep
-    DATA_CLASSIFICATION_PRINCETON = DATA_PATH + 'benchmark' + os.sep + 'classification' + os.sep + 'v1' + os.sep + 'coarse1' + os.sep
-
-    SAVED_DATA = DATA_PATH + 'cache' + os.sep
-    NORMALIZED_DATA = SAVED_DATA + 'processed_data' + os.sep
 
     write = False
 
@@ -56,6 +57,12 @@ def normalize_data(shapes):
         shape.set_faces(np.asarray(new_mesh.triangles).tolist())
         shape.set_center(tuple(new_mesh.get_center()))
         # TODO: update avg_depth? bounding_box? scale?
+
+    # Saving normalised shapes and respective off files to disk
+    for shape in remove_meshes(shapes):
+        write_off(NORMALIZED_DATA, shape)
+        np.save(NORMALIZED_DATA + 'n' + str(shape.get_id()) + '.npy', [shape])
+    # TODO: override tot_verts and tot_faces in file?
 
     return shapes, tot_new_verts, tot_new_faces
 
