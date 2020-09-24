@@ -22,6 +22,7 @@ def normalize_data(shapes):
     tot_new_verts = []
     tot_new_faces = []
 
+    print('Normalising shapes . . .')
     for shape in shapes:
 
         # TODO: determine suitable parameters
@@ -58,11 +59,16 @@ def normalize_data(shapes):
         shape.set_center(tuple(new_mesh.get_center()))
         # TODO: update avg_depth? bounding_box? scale?
 
+    print("Shapes normalised succesfully.")
+    print("Saving normalised shapes in cache.")
+
     # Saving normalised shapes and respective off files to disk
     for shape in remove_meshes(shapes):
         write_off(NORMALIZED_DATA, shape)
         np.save(NORMALIZED_DATA + 'n' + str(shape.get_id()) + '.npy', [shape])
     # TODO: override tot_verts and tot_faces in file?
+
+    print("Normalised shapes saved.")
 
     return shapes, tot_new_verts, tot_new_faces
 
