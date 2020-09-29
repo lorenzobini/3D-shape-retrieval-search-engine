@@ -1,6 +1,6 @@
 import numpy as np
 import os
-from shape import Shape
+from src.shape import Shape
 
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
 SAVED_DATA = DATA_PATH + 'cache' + os.sep

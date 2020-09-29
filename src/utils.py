@@ -101,11 +101,11 @@ def calculate_box(vertices):
 
 # Code to show a histogram
 def show_graph(faces, avg, sd):
-    hist, bin_edges = np.histogram(faces, bins=range(0, 20000, 500))
+    hist, bin_edges = np.histogram(faces, bins = np.arange(0, 10000, 250))
 
     plt.figure(figsize=[10, 8])
 
-    plt.bar(bin_edges[:-1], hist, width=500, color='#0504aa', alpha=0.7)
+    plt.bar(bin_edges[:-1], hist, width=250, color='#0504aa', alpha=0.7)
     plt.xlim(min(bin_edges), max(bin_edges))
     plt.grid(axis='y', alpha=0.75)
     plt.xlabel('Number of Vertices', fontsize=15)

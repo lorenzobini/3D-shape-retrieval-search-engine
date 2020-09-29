@@ -7,14 +7,14 @@ from src.utils import *
 import open3d as o3d
 
 # from shape import Shape
-# from normalize import normalizeData
+# from normalize import normalize_data
 # from utils import *
 # import open3d as o3d
 
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
 
 # TODO: to import the entire dataset remove the '0' and the redundant os.sep, REMOVE FOR FINAL PROGRAM
-DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep + '0' + os.sep  # + 'm5' + os.sep
+DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep + 'test' + os.sep #+ 'm0' + os.sep
 DATA_CLASSIFICATION_PRINCETON = DATA_PATH + 'benchmark' + os.sep + 'classification' + os.sep + 'v1' + os.sep + 'coarse1' + os.sep
 
 SAVED_DATA = DATA_PATH + 'cache' + os.sep
@@ -71,7 +71,6 @@ def import_dataset() -> ([Shape], defaultdict):
             if obj.endswith('.txt'):
                 file = open(dirName + '\\' + obj, "r")
                 shape = read_info(file, shape)
-
         if shape is not None:
             # Assigning the class if present
             shape_class = labels[str(shape.get_id())]
@@ -92,10 +91,6 @@ def import_dataset() -> ([Shape], defaultdict):
     sd_verts = np.std(tot_verts)
 
     # Showing the normal distribution of vertices on screen
-    SHOW_GRAPH = False
-    if SHOW_GRAPH:
-        show_graph(tot_verts, avg_verts, sd_verts)
-
     return shapes, labels
 
 

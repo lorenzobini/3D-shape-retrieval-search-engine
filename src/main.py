@@ -1,13 +1,18 @@
-from src.dataLoader import import_dataset, import_normalised_data
 from collections import defaultdict
 
 # from shape import Shape
 # from visualize import visualize
 # from normalize import normalize_data
+# from dataLoader import import_dataset, import_normalised_data
+# from features   import calculate_metrics
+
 
 from src.shape import Shape
 from src.visualize import visualize
 from src.normalize import normalize_data
+from src.dataLoader import import_dataset, import_normalised_data
+from src.features import *
+
 
 import os
 
@@ -28,14 +33,14 @@ def main():
         shapes, labels = import_dataset()
 
         # Visualising shapes
-        visualize(shapes, labels)
+        # visualize(shapes, labels)
 
         # Step 2: Normalising and remeshing shapes --------------
         shapes, tot_verts, tot_faces = normalize_data(shapes)
-
-
+        
         # Visualising normalised shapes
-        visualize(shapes, labels)
+        #visualize(shapes, labels)
+
 
     else:
         # Normalised shapes in cache, loading them directly
@@ -45,7 +50,7 @@ def main():
         visualize(shapes, labels)
 
     # Step 3: Feature extraction -------------------------------
-    surface_area(shapes)
+    calculate_metrics(shapes)
 
     # ---------------------------------------------------------
     # ONLINE WORKFLOW - QUERYING A SHAPE AND DISPLAYING RESULTS
