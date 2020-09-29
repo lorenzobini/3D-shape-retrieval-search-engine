@@ -83,6 +83,9 @@ class Shape:
     def delete_mesh(self):
         self.mesh = None
 
+    def is_watertight(self) -> geometry.TriangleMesh.is_watertight:
+        return self.mesh
+
     # Counts
 
     def get_n_faces(self) -> int:

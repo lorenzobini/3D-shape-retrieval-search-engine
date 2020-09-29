@@ -45,7 +45,7 @@ def main():
         visualize(shapes, labels)
 
     # Step 3: Feature extraction -------------------------------
-    pass
+    surface_area(shapes)
 
     # ---------------------------------------------------------
     # ONLINE WORKFLOW - QUERYING A SHAPE AND DISPLAYING RESULTS

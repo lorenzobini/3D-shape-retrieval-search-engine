@@ -26,9 +26,10 @@ def normalize_data(shapes):
     for shape in shapes:
 
         # TODO: determine suitable parameters
-        avg_verts = 5000
-        q1_verts = 2500
-        q3_verts = 7500
+        # Recalling from the lecture: Alex said that between 1000 and 3000 is a good value
+        avg_verts = 2000
+        q1_verts = 1000
+        q3_verts = 3000
 
         # print(f'Before refinement the mesh has {len(mesh.vertices)} vertices and {len(mesh.triangles)} triangles')
 
@@ -76,8 +77,8 @@ def normalize_data(shapes):
     # Computing average number of vertices and standard deviation
     avg_faces = np.mean(tot_faces)
     sd_faces = np.std(tot_faces)
-    q1_verts = np.percentile(tot_verts, 25)
-    q3_verts = np.percentile(tot_verts, 75)
+    #q1_verts = np.percentile(tot_verts, 25)
+    #q3_verts = np.percentile(tot_verts, 75)
 
     # print(f'Before refinement: average number of vertices is: {np.mean(tot_verts)} with sd of: {np.std(tot_verts)} \n and average number of faces is: {np.mean(tot_faces)} with sd of: {np.std(tot_faces)}')
     # print(f'After refinement: average number of vertices is: {np.mean(tot_new_verts)} with sd of: {np.std(tot_new_verts)} \n and average number of faces is: {np.mean(tot_new_faces)} with sd of: {np.std(tot_new_faces)}')
@@ -86,13 +87,20 @@ def normalize_data(shapes):
 # Remeshes shapes that 
 def remeshing(mesh, avg_verts, q1_verts, q3_verts):
 
+    voxel_denominator = 32
+    
     while len(mesh.vertices) < q1_verts or len(mesh.vertices) > q3_verts:     
         if len(mesh.vertices) < avg_verts:
             mesh = mesh.subdivide_midpoint(number_of_iterations=1)
+
         elif len(mesh.vertices) >= avg_verts:
-            mesh = mesh.simplify_quadric_decimation(target_number_of_triangles=avg_verts)
+
+            # the bigger the voxel size, the more vertices are clustered and thus the more the mesh is simplified
+            voxel_size = max(mesh.get_max_bound() - mesh.get_min_bound()) / voxel_denominator
+            mesh = mesh.simplify_vertex_clustering(voxel_size=voxel_size, contraction=o3d.geometry.SimplificationContraction.Average)
+            voxel_denominator = voxel_denominator - 2
             
-    # print(f'After simplifying the mesh has {len(mesh.vertices)} vertices and {len(mesh.triangles)} triangles')
+    #print(f'After simplifying the mesh has {len(mesh.vertices)} vertices and {len(mesh.triangles)} triangles')
     n_verts = len(mesh.vertices)
     n_faces = len(mesh.triangles)
     
