@@ -14,13 +14,12 @@ SAVED_DATA = DATA_PATH + 'cache' + os.sep
 def calculate_metrics(shapes):
     print("Calculating all the object features...")
 
-    features = defaultdict(lambda def_value: None)
+    features = defaultdict(lambda: defaultdict(None))
 
      # calculate the metrics for each shape
     for shape in shapes:
 
         id = shape.get_id()
-        features[id] = defaultdict(lambda def_value: None)
 
         # calculate the default metrics
         features[id]["surface_area"] = surface_area(shape)
