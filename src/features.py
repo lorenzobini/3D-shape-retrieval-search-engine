@@ -7,6 +7,7 @@ from collections import defaultdict
 # Other file imports
 # from shape import Shape
 from src.shape import Shape
+from src.boundingbox import BoundingBox
 
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
 SAVED_DATA = DATA_PATH + 'cache' + os.sep
@@ -64,6 +65,7 @@ def surface_area(shape):
 
     return volume_arr
 
+
 def signed_volume_of_triangle(p1, p2, p3):
     
     # p[0] = x coordinate, p[1] = y coordinate, p[2] = z coordinate
@@ -76,39 +78,63 @@ def signed_volume_of_triangle(p1, p2, p3):
 
     return 1/6*(-v321 + v231 + v312 - v132 - v213 + v123)
 
+
 def compactness(shape):
     pass
 
-def bbox_volume(shape):
-    pass
 
+# Volume of the shape's axis-aligned bounding box
+def bbox_volume(shape):
+    bbox = shape.get_buinding_box()
+    x = bbox.get_xmax() - bbox.get_xmin()
+    y = bbox.get_ymax() - bbox.get_ymin()
+    z = bbox.get_zmax() - bbox.get_zmin()
+
+    volume = x * y * z
+
+    return volume
+
+
+# Largest distance between two points on the surface of the shape
 def diameter(shape):
-    pass
+    max_distance = 0
+    for x1, y1, z1 in shape.get_vertices():
+        for x2, y2, z2 in shape.get_vertices():
+            distance = np.sqrt(((x1-x2)**2)+((y1-y2)**2)+((z1-z2)**2))
+            if distance > max_distance:
+                max_distance = distance
+
+    return  max_distance
 
 def eccentricity(shape):
     pass
+
 
 # Angle between 3 random vertices
 def calc_A3(shape):
     pass
 
+
 # Distance between barycenter and random vertex, returns histogram vector and bin_edges
 def calc_D1(shape):
     xc, yc, zc = shape.get_center()
     D = []
-    for x, y, z in shape.vertices:
+    for x, y, z in shape.get_vertices():
         D.append(np.sqrt(((x-xc)**2)+((y-yc)**2)+((z-zc)**2)))
     # crate histogram with 10 bins from 0 - 1.0
     hist, bin_edges = np.histogram(np.array(D), bins= np.arange(0,1, 0.1))
     return (hist, bin_edges)
 
+
 # Distance between 2 random vertices
 def calc_D2(shape):
     pass
 
+
 # Square root of area of triangle given by 3 random vertices
 def calc_D3(shape):
     pass
+
 
 # Cube root of volume of tetrahedron formed by 4 random vertices
 def calc_D4(shape):

@@ -23,8 +23,6 @@ def normalize_data(shapes):
     print('Normalising shapes . . .')
     for shape in shapes:
 
-        # TODO: determine suitable parameters
-        # Recalling from the lecture: Alex said that between 1000 and 3000 is a good value
         avg_verts = 2000
         q1_verts = 1000
         q3_verts = 3000
@@ -59,11 +57,13 @@ def normalize_data(shapes):
         # flipping
         new_mesh = flip_mesh(new_mesh)
 
+        x_min, y_min, z_min, x_max, y_max, z_max = calculate_box(new_mesh.vertices)
         # Updating shape
         shape.set_vertices(np.asarray(new_mesh.vertices))
         shape.set_faces(np.asarray(new_mesh.triangles).tolist())
         shape.set_center(tuple(new_mesh.get_center()))
-        # TODO: update avg_depth? bounding_box? scale?
+        shape.set_bounding_box(x_min, y_min, z_min, x_max, y_max, z_max)
+        # TODO: update avg_depth? scale?
     
 
     print("Shapes normalised succesfully.")
