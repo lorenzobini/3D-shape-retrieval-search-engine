@@ -1,15 +1,15 @@
 from collections import defaultdict
+import open3d as o3d
 
 # Imports from other files,
 from src.shape import Shape
 from src.normalize import normalize_data
 from src.utils import *
-import open3d as o3d
 
 # from shape import Shape
 # from normalize import normalize_data
 # from utils import *
-# import open3d as o3d
+
 
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
 

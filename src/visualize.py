@@ -4,10 +4,6 @@ from OpenGL.GL.shaders import compileProgram, compileShader
 import numpy as np
 import time
 
-# Imports from other files
-from src.shape import Shape
-# from shape import Shape
-
 
 # Define needed global variabels for rotation, translation, zooming
 xrot, yrot, xspeed, yspeed = 0, 0, 0, 0

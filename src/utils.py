@@ -152,3 +152,15 @@ def write_off(path, shape):
         face = ' '.join(face)
         f.write('3 '+ face + '\n')
     f.close()
+
+# Calculates eigenvectors based on the vertices
+def calc_eigenvectors(verts):
+    A = np.zeros((3, len(verts)))
+    A[0] = [x[0] for x in verts]
+    A[1] = [x[1] for x in verts]
+    A[2] = [x[2] for x in verts]
+    A_cov = np.cov(A)
+    
+    eigenvalues, eigenvectors = np.linalg.eig(A_cov)
+
+    return eigenvalues, eigenvectors

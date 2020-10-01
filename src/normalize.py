@@ -1,6 +1,7 @@
 from src.utils import *
 # from utils import *
 import open3d as o3d
+import os
 
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
 DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep + '0' + os.sep
@@ -41,13 +42,6 @@ def normalize_data(shapes):
             verts[i] = vertix-center
         new_mesh.vertices = verts
 
-
-        # Scale to bounding box
-        x_min, y_min, z_min, x_max, y_max, z_max = calculate_box(new_mesh.vertices)
-        scale = max([x_max-x_min, y_max-y_min, z_max-z_min])
-        ratio = (1/scale)
-        new_mesh.scale(ratio, center=(0,0,0))
-
         # orientates the normals in the same direction
         new_mesh.orient_triangles()
         
@@ -57,12 +51,18 @@ def normalize_data(shapes):
         # flipping
         new_mesh = flip_mesh(new_mesh)
 
+        # Scale to bounding box
         x_min, y_min, z_min, x_max, y_max, z_max = calculate_box(new_mesh.vertices)
+        scale = max([x_max-x_min, y_max-y_min, z_max-z_min])
+        ratio = (1/scale)
+        new_mesh.scale(ratio, center=(0,0,0))
+
         # Updating shape
         shape.set_vertices(np.asarray(new_mesh.vertices))
         shape.set_faces(np.asarray(new_mesh.triangles).tolist())
         shape.set_center(tuple(new_mesh.get_center()))
         shape.set_bounding_box(x_min, y_min, z_min, x_max, y_max, z_max)
+        shape.set_scale(scale)
         # TODO: update avg_depth? scale?
     
 
@@ -113,19 +113,6 @@ def read_txt(file):
             break
     return center
 
-
-def calc_eigenvectors(verts):
-    A = np.zeros((3, len(verts)))
-    A[0] = [x[0] for x in verts]
-    A[1] = [x[1] for x in verts]
-    A[2] = [x[2] for x in verts]
-    A_cov = np.cov(A)
-    
-    eigenvalues, eigenvectors = np.linalg.eig(A_cov)
-
-    return eigenvalues, eigenvectors
-
-
 # Applies the PCA to the vertices of the mesh
 def rotate_PCA(mesh):
     
@@ -141,7 +128,7 @@ def rotate_PCA(mesh):
         v = verts[i]
         p1 = np.dot(v, eigenvectors[max_eigen])
         p2 = np.dot(v, eigenvectors[mid_eigen])
-        p3 = np.dot(v, eigenvectors[min_eigen])
+        p3 = np.dot(v, eigenvectors[max_eigen]*eigenvectors[mid_eigen])
         new_verts[i] = [p1, p2, p3]
     mesh.vertices = new_verts
     return mesh

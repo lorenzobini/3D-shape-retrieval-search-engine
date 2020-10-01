@@ -39,7 +39,7 @@ def main():
         shapes, tot_verts, tot_faces = normalize_data(shapes)
         
         # Visualising normalised shapes
-        #visualize(shapes, labels)
+        visualize(shapes, labels)
 
 
     else:

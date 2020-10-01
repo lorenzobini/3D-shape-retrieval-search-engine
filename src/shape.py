@@ -18,6 +18,8 @@ class Shape:
     scale: float
     class_id: int
     class_name: str
+    eigenvectors:[[float]]
+    eigenvalues:[[float]]
 
 
     # to be determined if necessary -------------------------
