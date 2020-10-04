@@ -2,19 +2,19 @@ from collections import defaultdict
 import open3d as o3d
 
 # Imports from other files,
-from src.shape import Shape
-from src.normalize import normalize_data
-from src.utils import *
+# from src.shape import Shape
+# from src.normalize import normalize_data
+# from src.utils import *
 
-# from shape import Shape
-# from normalize import normalize_data
-# from utils import *
+from shape import Shape
+from normalize import normalize_data
+from utils import *
 
 
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
 
 # TODO: to import the entire dataset remove the '0' and the redundant os.sep, REMOVE FOR FINAL PROGRAM
-DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep + 'test' + os.sep #+ 'm0' + os.sep
+DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep + '0' + os.sep #+ 'm57' + os.sep
 DATA_CLASSIFICATION_PRINCETON = DATA_PATH + 'benchmark' + os.sep + 'classification' + os.sep + 'v1' + os.sep + 'coarse1' + os.sep
 
 SAVED_DATA = DATA_PATH + 'cache' + os.sep
@@ -74,7 +74,7 @@ def import_dataset() -> ([Shape], defaultdict):
         if shape is not None:
             # Assigning the class if present
             shape_class = labels[str(shape.get_id())]
-            shape.set_class(shape_class[1], shape_class[0])  # class id, class name
+            shape.set_class(shape_class[0], shape_class[1])  # class id, class name
             # Appending to list
             shapes.append(shape)
 

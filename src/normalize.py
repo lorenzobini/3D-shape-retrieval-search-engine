@@ -1,7 +1,7 @@
-from src.utils import *
-# from utils import *
+# from src.utils import *
+from utils import *
 import open3d as o3d
-import os
+from visualize import visualize
 
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
 DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep + '0' + os.sep
@@ -19,7 +19,7 @@ def normalize_data(shapes):
     tot_verts = []
     tot_faces = []
     tot_new_verts = []
-    tot_new_faces = []
+    tot_new_faces = [] 
 
     print('Normalising shapes . . .')
     for shape in shapes:
@@ -28,10 +28,10 @@ def normalize_data(shapes):
         q1_verts = 1000
         q3_verts = 3000
 
-        # print(f'Before refinement the mesh has {len(mesh.vertices)} vertices and {len(mesh.triangles)} triangles')
-
+        # Doing the mesh refinement
         new_mesh, new_n_verts, new_n_faces = remeshing(shape.get_mesh(), avg_verts, q1_verts, q3_verts)
-                
+        
+        
         tot_new_verts.append(new_n_verts)
         tot_new_faces.append(new_n_faces)
      
@@ -46,7 +46,7 @@ def normalize_data(shapes):
         new_mesh.orient_triangles()
         
         # rotate based on PCA
-        new_mesh = rotate_PCA(new_mesh)
+        new_mesh = rotate_PCA(new_mesh, shape)
 
         # flipping
         new_mesh = flip_mesh(new_mesh)
@@ -96,7 +96,6 @@ def remeshing(mesh, avg_verts, q1_verts, q3_verts):
             mesh = mesh.simplify_vertex_clustering(voxel_size=voxel_size, contraction=o3d.geometry.SimplificationContraction.Average)
             voxel_denominator = voxel_denominator - 2
             
-    #print(f'After simplifying the mesh has {len(mesh.vertices)} vertices and {len(mesh.triangles)} triangles')
     n_verts = len(mesh.vertices)
     n_faces = len(mesh.triangles)
     
@@ -114,22 +113,23 @@ def read_txt(file):
     return center
 
 # Applies the PCA to the vertices of the mesh
-def rotate_PCA(mesh):
+def rotate_PCA(mesh, shape):
     
     eigenvalues, eigenvectors = calc_eigenvectors(mesh.vertices)
     
     min_eigen = np.argmin(eigenvalues)
     max_eigen = np.argmax(eigenvalues)
     mid_eigen = (set([0,1,2]) - set([max_eigen, min_eigen])).pop()
-
     verts = mesh.vertices
-    new_verts = verts
+    new_verts = []
+    c = mesh.get_center()
     for i in range(0, len(verts)):
         v = verts[i]
-        p1 = np.dot(v, eigenvectors[max_eigen])
-        p2 = np.dot(v, eigenvectors[mid_eigen])
-        p3 = np.dot(v, eigenvectors[max_eigen]*eigenvectors[mid_eigen])
-        new_verts[i] = [p1, p2, p3]
+        p1 = np.dot(v-c, eigenvectors[:,max_eigen])
+        p2 = np.dot(v-c, eigenvectors[:,mid_eigen])
+        p3 = np.dot(v-c, eigenvectors[:,min_eigen])
+        new_verts.append([p1, p2, p3])
+    new_verts = o3d.utility.Vector3dVector(np.array(new_verts))
     mesh.vertices = new_verts
     return mesh
 
@@ -158,8 +158,9 @@ def flip_mesh(mesh):
     f_z = calculate_f(triangles[2])
 
     R = np.array([[np.sign(f_x), 0,0], [0, np.sign(f_y), 0], [0,0, np.sign(f_z)]])
-    mesh.rotate(R, center=(0,0,0))
+    mesh.rotate(R, center=mesh.get_center())
     return mesh
+
 
 
 

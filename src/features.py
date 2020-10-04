@@ -110,9 +110,9 @@ def diameter(shape):
 
 # Calculate the ratio between the minor eigenvalue en major eigenvalue
 def eccentricity(shape):
-    eigenvalues, _ = calc_eigenvectors(shape.get_vertices())
-    min_eigen = min(eigenvalues)
-    max_eigen = max(eigenvalues)
+    eigenvalues, _ = calc_eigenvectors(shape.get_vertices(), shape.get_id())
+    min_eigen = np.min(eigenvalues)
+    max_eigen = np.max(eigenvalues)
     return np.abs(max_eigen)/np.abs(min_eigen)
 
 

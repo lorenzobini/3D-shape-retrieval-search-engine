@@ -4,7 +4,6 @@ import os
 import re
 import copy
 
-
 # Parse a .off file
 def read_off(file):
     if 'OFF' != file.readline().strip():
@@ -156,11 +155,12 @@ def write_off(path, shape):
 # Calculates eigenvectors based on the vertices
 def calc_eigenvectors(verts):
     A = np.zeros((3, len(verts)))
-    A[0] = [x[0] for x in verts]
-    A[1] = [x[1] for x in verts]
-    A[2] = [x[2] for x in verts]
-    A_cov = np.cov(A)
+
+    A[0] = np.array([x[0] for x in verts]) # First row is all the X_coords
+    A[1] = np.array([x[1] for x in verts]) # second row is all the Y_coords
+    A[2] = np.array([x[2] for x in verts]) # third row is all the z-coords
     
+    A_cov = np.cov(A) # This is returns a 3x3
     eigenvalues, eigenvectors = np.linalg.eig(A_cov)
 
     return eigenvalues, eigenvectors

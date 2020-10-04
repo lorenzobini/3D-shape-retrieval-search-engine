@@ -1,6 +1,6 @@
 from open3d import geometry
-from src.boundingbox import BoundingBox
-# from boundingbox import BoundingBox
+# from src.boundingbox import BoundingBox
+from boundingbox import BoundingBox
 
 
 class Shape:

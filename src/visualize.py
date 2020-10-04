@@ -4,6 +4,10 @@ from OpenGL.GL.shaders import compileProgram, compileShader
 import numpy as np
 import time
 
+# Imports from other files
+# from src.shape import Shape
+from shape import Shape
+
 
 # Define needed global variabels for rotation, translation, zooming
 xrot, yrot, xspeed, yspeed = 0, 0, 0, 0
@@ -91,7 +95,8 @@ def visualize(shapes_list, labels):
             for number in index:
                 glVertex3f(vertices[number][0], vertices[number][1], vertices[number][2])
             glEnd()
-        
+
+               
         if DRAW_EDGES: 
             for index in indices:
                 # Draws the lines for the vertices
