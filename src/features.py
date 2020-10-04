@@ -153,7 +153,7 @@ def calc_D2(shape):
 # Square root of area of triangle given by 3 random vertices
 def calc_D3(shape):
     verticeList = random.choices(shape.get_vertices(), k=999)  # select 999 random vertices
-    # Divide into two lists, do it this way to prevent selecting the same vertice
+    # Divide into three lists, do it this way to prevent selecting the same vertice
     verticesOne = verticeList[:333]
     verticesTwo = verticeList[333:666]
     verticesThree = verticeList[666:]
@@ -177,10 +177,29 @@ def calc_D3(shape):
     return (hist, bin_edges)
 
 
-
 # Cube root of volume of tetrahedron formed by 4 random vertices
 def calc_D4(shape):
-    pass
+    verticeList = random.choices(shape.get_vertices(), k=999)  # select 999 random vertices
+    # Divide into three lists, do it this way to prevent selecting the same vertice
+    verticesOne = verticeList[:333]
+    verticesTwo = verticeList[333:666]
+    verticesThree = verticeList[666:]
+    c = shape.get_center()
+    D = []
+    for p1 in verticesOne:
+        for p2 in verticesTwo:
+            for p3 in verticesThree:
+                p1_c = np.subtract(p1, c)
+                p2_c = np.subtract(p2, c)
+                p3_c = np.subtract(p3, c)
+
+                volume = np.abs(np.dot(p1_c, np.cross(p2_c, p3_c))) / 6
+
+                D.append(np.cbrt(volume))
+
+    hist, bin_edges = np.histogram(np.array(D), bins=np.arange(0, 1.25, 0.125))  # TODO: bins may need adjustment
+
+    return (hist, bin_edges)
 
 
 
