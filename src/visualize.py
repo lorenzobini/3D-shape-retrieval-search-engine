@@ -168,7 +168,7 @@ def key_callback(window, key, scancode, action, mods):
     elif (key == 82 or key == 114) and action == GLFW_PRESS:
         if rotation == 0:
             rotation = 1
-            print("You are now in rotaton mode.")
+            print("You are now in rotation mode.")
         else:
             rotation = 0
             print("You are now in translation mode.")

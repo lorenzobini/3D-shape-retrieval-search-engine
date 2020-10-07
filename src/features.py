@@ -5,12 +5,13 @@ import math
 import os
 import matplotlib.pyplot as plt
 import random
-from collections import defaultdict
+
 
 # Other file imports
 # from shape import Shape
 # from boundingbox import BoundingBox
 # from utils import calc_eigenvectors, euclidean
+from src.utils import *
 from src.boundingbox import BoundingBox
 from src.shape import Shape
 from src.utils import calc_eigenvectors
@@ -38,17 +39,19 @@ def calculate_metrics(shapes):
         features[id]["eccentricity"] = eccentricity(shape)
 
         # Distributions
-        features[id]["A3"] = calc_A3(shape)
-        features[id]["D1"] = calc_D1(shape)
-        features[id]["D2"] = calc_D2(shape)
-        features[id]["D3"] = calc_D3(shape)
-        features[id]["D4"] = calc_D4(shape)
+        distributions = calc_distributions(shape)
+        features[id]["A3"] = distributions["A3"]
+        features[id]["D1"] = distributions["D1"]
+        features[id]["D2"] = distributions["D2"]
+        features[id]["D3"] = distributions["D3"]
+        features[id]["D4"] = distributions["D4"]
 
     print("Done calculating the features.")
     # Saving features to disk
     np.save(SAVED_DATA + "features.npy", features)
 
     return shapes, features
+
 
 def volume(shape):  
 
@@ -83,12 +86,14 @@ def volume(shape):
 
     return volume
 
+
 def area(shape):
     mesh_trm = shape.get_mesh_trm()
     area = mesh_trm.area
     print('Area : ', area)
 
     return area
+
 
 def compactness(shape):
 
@@ -103,6 +108,7 @@ def compactness(shape):
     print('Sphericity : ', sphericity)
     
     return compactness
+
 
 # Volume of the shape's axis-aligned bounding box
 def bbox_volume(shape):
@@ -135,126 +141,132 @@ def eccentricity(shape):
     max_eigen = np.max(eigenvalues)
     return np.abs(max_eigen)/np.abs(min_eigen)
 
-# Compute the angle between 3 points
-def compute_angle(a, b, c):
-    ba = a - b
-    bc = c - b
 
-    cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
-    angle = np.arccos(np.abs(cosine_angle))
-    return np.degrees(angle)
+def calc_distributions(shape):
+    descriptors = {}
 
-# Angle between 3 random vertices
-def calc_A3(shape):
-    verticeList = random.sample(list(shape.get_vertices()), k=300)  # select 300 random vertices
-    # Divide into two lists, do it this way to prevent selecting the same vertice
-    verticesOne = verticeList[:100]
-    verticesTwo = verticeList[100:200]
-    verticesThree = verticeList[200:]
-    D = []
+    verticeList = random.sample(list(shape.get_vertices()), k=1000)  # select 1000 random vertices
+    center  = shape.get_center()
+    # Computing D1 -----------------------
+    descriptors["D1"] = calc_D1(center, verticeList)
+
+    # Computing D2 -----------------------
+    verticesOne = verticeList[:500]
+    verticesTwo = verticeList[500:]
+
+    descriptors["D2"] = calc_D2(verticesOne, verticesTwo)
+
+    # Computing A3, D3, D4 ---------------
+    verticesOne = verticeList[:333]
+    verticesTwo = verticeList[333:667]
+    verticesThree = verticeList[667:]
+
+    A3 = []
+    D3 = []
+    D4 = []
     for a in verticesOne:
         for b in verticesTwo:
             for c in verticesThree:
-                # Calculating the area of the triangle using
-                # side lengths
+                # Computing A3 for the current combination
+                A3.append(calc_A3(a, b, c))
+                # Computing D3 for the current combination
+                D3.append(calc_D3(a, b, c))
+                # Computing D4 for the current combination
+                D4.append(calc_D4(center, a, b, c))
 
-                D.append(compute_angle(a, b, c))
-
-    hist, bin_edges = np.histogram(np.array(D), bins=np.arange(0.0, 180.0, 18))
+    # Computing Histogram A3
+    hist, bin_edges = np.histogram(np.array(A3), bins=np.arange(0.0, 180.0, 18))
     hist = normalize_hist(hist)
-    return (hist, bin_edges)
+
+    descriptors["A3"] = (hist, bin_edges)
+
+    # Computing Histogram D3
+    hist, bin_edges = np.histogram(np.array(D3), bins=np.arange(0.0, 0.75, 0.075))
+    hist = normalize_hist(hist)
+
+    descriptors["D3"] = (hist, bin_edges)
+
+    # Computing Histogram D4
+    hist, bin_edges = np.histogram(np.array(D4), bins=np.arange(0.0, 0.75, 0.075))
+    hist = normalize_hist(hist)
+
+    descriptors["D4"] = (hist, bin_edges)
+
+    return descriptors
+
+
+# Angle between 3 random vertices
+def calc_A3(a, b, c):
+    angle = compute_angle(a, b, c)
+
+    return angle
 
 
 # Distance between barycenter and random vertex, returns histogram vector and bin_edges
-def calc_D1(shape):
-    xc, yc, zc = shape.get_center()
+def calc_D1(center, vertices):
+    (xc, yc, zc) = center
     D = []
-    # Select from
-    vertices = random.choices(shape.get_vertices(), k = 5000)
+
     for x, y, z in vertices:
-        D.append(euclidean(x,y,z,xc,yc,zc))
+        D.append(euclidean(x, y, z, xc, yc, zc))
     # crate histogram with 10 bins from 0 - 1.0
     hist, bin_edges = np.histogram(np.array(D), bins= np.arange(0,1, 0.1))
     hist = normalize_hist(hist)
+
     return (hist, bin_edges)
 
 
 # Distance between 2 random vertices
-def calc_D2(shape):
-    verticeList = random.sample(list(shape.get_vertices()), k = 1000) # select 1000 random vertices
-    # Divide into two lists, do it this way to prevent selecting the same vertice
-    verticesOne = verticeList[:500]
-    verticesTwo = verticeList[500:]
+def calc_D2(verticesOne, verticesTwo):
+
     D = []
+
     # Loop over both sets to create the vertice combinations, 250000 total
     for x1, y1, z1 in verticesOne:
         for x2, y2, z2 in verticesTwo:
-            D.append(euclidean(x1,y1,z1,x2,y2,z2))
+            D.append(euclidean(x1, y1, z1, x2, y2, z2))
     # Create histogram with 10 bins from 0 to 1.25 (as there where some values above 1)
+
     hist, bin_edges = np.histogram(np.array(D), bins= np.arange(0, 1.25, 0.125))
     hist = normalize_hist(hist)
+
     return(hist, bin_edges)
 
 
 # Square root of area of triangle given by 3 random vertices
-def calc_D3(shape):
-    verticeList = random.sample(list(shape.get_vertices()), k=300)  # select 300 random vertices
-    # Divide into two lists, do it this way to prevent selecting the same vertice
-    verticesOne = verticeList[:100]
-    verticesTwo = verticeList[100:200]
-    verticesThree = verticeList[200:]
-    D = []
-    for x1, y1, z1 in verticesOne:
-        for x2, y2, z2 in verticesTwo:
-            for x3, y3, z3 in verticesThree:
-                # Calculating the area of the triangle using
-                # side lengths
-                p1_p2 = np.sqrt(((x1 - x2) ** 2) + ((y1 - y2) ** 2) + ((z1 - z2) ** 2))
-                p1_p3 = np.sqrt(((x1 - x3) ** 2) + ((y1 - y3) ** 2) + ((z1 - z3) ** 2))
-                p2_p3 = np.sqrt(((x2 - x3) ** 2) + ((y2 - y3) ** 2) + ((z2 - z3) ** 2))
+def calc_D3(a, b, c):
+    (x1, y1, z1) = a
+    (x2, y2, z2) = b
+    (x3, y3, z3) = c
 
-                sp = 0.5 * (p1_p2 + p1_p3 + p2_p3)
-                area = np.sqrt(sp * (sp-p1_p2) * (sp-p1_p3) * (sp-p2_p3))
+    # Calculating the area of the triangle using
+    # side lengths
+    p1_p2 = np.sqrt(((x1 - x2) ** 2) + ((y1 - y2) ** 2) + ((z1 - z2) ** 2))
+    p1_p3 = np.sqrt(((x1 - x3) ** 2) + ((y1 - y3) ** 2) + ((z1 - z3) ** 2))
+    p2_p3 = np.sqrt(((x2 - x3) ** 2) + ((y2 - y3) ** 2) + ((z2 - z3) ** 2))
 
-                D.append(np.sqrt(area))
+    sp = 0.5 * (p1_p2 + p1_p3 + p2_p3)
+    area = np.sqrt(sp * (sp-p1_p2) * (sp-p1_p3) * (sp-p2_p3))
 
-    hist, bin_edges = np.histogram(np.array(D), bins=np.arange(0.0, 0.75, 0.075))
-    hist = normalize_hist(hist)
-    return (hist, bin_edges)
+    return np.sqrt(area)
 
 
 # Cube root of volume of tetrahedron formed by 4 random vertices
-def calc_D4(shape):
-    verticeList = random.sample(list(shape.get_vertices()), k=300)  # select 999 random vertices
-    # Divide into three lists, do it this way to prevent selecting the same vertice
-    verticesOne = verticeList[:100]
-    verticesTwo = verticeList[100:200]
-    verticesThree = verticeList[200:]
-    c = shape.get_center()
-    D = []
-    for p1 in verticesOne:
-        for p2 in verticesTwo:
-            for p3 in verticesThree:
-                p1_c = np.subtract(p1, c)
-                p2_c = np.subtract(p2, c)
-                p3_c = np.subtract(p3, c)
+def calc_D4(center, p1, p2, p3):
 
-                volume = np.abs(np.dot(p1_c, np.cross(p2_c, p3_c))) / 6
+    p1_c = np.subtract(p1, center)
+    p2_c = np.subtract(p2, center)
+    p3_c = np.subtract(p3, center)
 
-                D.append(np.cbrt(volume))
+    volume = np.abs(np.dot(p1_c, np.cross(p2_c, p3_c))) / 6
 
-    hist, bin_edges = np.histogram(np.array(D),bins=np.arange(0.0, 0.75, 0.075)) 
-    hist = normalize_hist(hist) 
-    return (hist, bin_edges)
+    return np.cbrt(volume)
 
-# Normalizing a histogram H = {hi} is simple: Replace each value hi by hi/ Si hi. This way, each bar becomes a percentage
-# in [0,1], regardless of the total number of samples Si hi.
-def normalize_hist(hist):
-    hsum = np.sum(hist)
-    newhist = []
-    for hi in hist:
-        newhist.append(hi/hsum)
-    return newhist
+
+
+
+
+
 
 
 

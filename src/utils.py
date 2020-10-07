@@ -152,6 +152,7 @@ def write_off(path, shape):
         f.write('3 '+ face + '\n')
     f.close()
 
+
 # Calculates eigenvectors based on the vertices
 def calc_eigenvectors(verts):
     A = np.zeros((3, len(verts)))
@@ -165,5 +166,26 @@ def calc_eigenvectors(verts):
 
     return eigenvalues, eigenvectors
 
+
 def euclidean(x1,y1,z1, x2,y2,z2):
     return np.sqrt(((x1-x2)**2)+((y1-y2)**2)+((z1-z2)**2))
+
+
+# Compute the angle between 3 points
+def compute_angle(a, b, c):
+    ba = a - b
+    bc = c - b
+
+    cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
+    angle = np.arccos(np.abs(cosine_angle))
+    return np.degrees(angle)
+
+
+# Normalizing a histogram H = {hi} is simple: Replace each value hi by hi/ Si hi. This way, each bar becomes a percentage
+# in [0,1], regardless of the total number of samples Si hi.
+def normalize_hist(hist):
+    hsum = np.sum(hist)
+    newhist = []
+    for hi in hist:
+        newhist.append(hi/hsum)
+    return newhist
