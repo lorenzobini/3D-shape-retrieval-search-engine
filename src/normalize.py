@@ -1,7 +1,10 @@
-# from src.utils import *
-from utils import *
+from src.utils import *
+from src.visualize import visualize
+# from utils import *
+# from visualize import visualize
+
 import open3d as o3d
-from visualize import visualize
+
 
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
 DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep + 'test' + os.sep

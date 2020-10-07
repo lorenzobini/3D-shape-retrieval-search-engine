@@ -8,12 +8,12 @@ import random
 from collections import defaultdict
 
 # Other file imports
-from shape import Shape
-from boundingbox import BoundingBox
-from utils import calc_eigenvectors, euclidean
-# from src.boundingbox import BoundingBox
-# from src.shape import Shape
-# from src.utils import calc_eigenvectors
+# from shape import Shape
+# from boundingbox import BoundingBox
+# from utils import calc_eigenvectors, euclidean
+from src.boundingbox import BoundingBox
+from src.shape import Shape
+from src.utils import calc_eigenvectors
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
 SAVED_DATA = DATA_PATH + 'cache' + os.sep
 
@@ -160,7 +160,7 @@ def calc_A3(shape):
 
                 D.append(compute_angle(a, b, c))
 
-    hist, bin_edges = np.histogram(np.array(D), bins=np.arange(0.0, 180.0, 18)) # TODO: bins may need adjustment
+    hist, bin_edges = np.histogram(np.array(D), bins=np.arange(0.0, 180.0, 18))
     hist = normalize_hist(hist)
     return (hist, bin_edges)
 
@@ -218,7 +218,7 @@ def calc_D3(shape):
 
                 D.append(np.sqrt(area))
 
-    hist, bin_edges = np.histogram(np.array(D), bins=np.arange(0.0, 0.75, 0.075)) # TODO: bins may need adjustment
+    hist, bin_edges = np.histogram(np.array(D), bins=np.arange(0.0, 0.75, 0.075))
     hist = normalize_hist(hist)
     return (hist, bin_edges)
 

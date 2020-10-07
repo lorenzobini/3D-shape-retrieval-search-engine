@@ -3,18 +3,18 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-from shape import Shape
-from visualize import visualize
-from normalize import normalize_data
-from dataLoader import import_dataset, import_normalised_data
-from features   import calculate_metrics
+# from shape import Shape
+# from visualize import visualize
+# from normalize import normalize_data
+# from dataLoader import import_dataset, import_normalised_data
+# from features   import calculate_metrics
 
 
-# from src.shape import Shape
-# from src.visualize import visualize
-# from src.normalize import normalize_data
-# from src.dataLoader import import_dataset, import_normalised_data
-# from src.features import *
+from src.shape import Shape
+from src.visualize import visualize
+from src.normalize import normalize_data
+from src.dataLoader import import_dataset, import_normalised_data
+from src.features import *
 
 
 
