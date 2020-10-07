@@ -1,5 +1,6 @@
 from collections import defaultdict
 import open3d as o3d
+import trimesh as trm
 
 # Imports from other files,
 # from src.shape import Shape
@@ -14,7 +15,7 @@ from utils import *
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
 
 # TODO: to import the entire dataset remove the '0' and the redundant os.sep, REMOVE FOR FINAL PROGRAM
-DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep + '0' + os.sep #+ 'm57' + os.sep
+DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep + 'test' + os.sep #+ 'm84' + os.sep
 DATA_CLASSIFICATION_PRINCETON = DATA_PATH + 'benchmark' + os.sep + 'classification' + os.sep + 'v1' + os.sep + 'coarse1' + os.sep
 
 SAVED_DATA = DATA_PATH + 'cache' + os.sep
@@ -51,20 +52,23 @@ def import_dataset() -> ([Shape], defaultdict):
             if obj.endswith('.off'):
                 file = open(dirName + '\\' + obj, "r")
                 verts, faces, n_verts, n_faces = read_off(file)
-                mesh = o3d.io.read_triangle_mesh(dirName + '\\' + obj)
+                mesh_o3d = o3d.io.read_triangle_mesh(dirName + '\\' + obj)
+                mesh_trm = trm.load(dirName + '\\' + obj)
+                print(type(mesh_trm), type(mesh_o3d))
                 tot_verts.append(n_verts)
                 tot_faces.append(n_faces)
 
-                shape = Shape(verts, faces, mesh)
+                shape = Shape(verts, faces, mesh_o3d, mesh_trm)
 
             elif (obj.endswith('.ply')):
                 file = open(dirName + '\\' + obj, "r")
                 verts, faces, n_verts, n_faces = parse_ply(file)
                 mesh = o3d.io.read_triangle_mesh(dirName + '\\' + obj)
+                mesh_trm = trm.load(dirName + '\\' + obj)
                 tot_verts.append(n_verts)
                 tot_faces.append(n_faces)
 
-                shape = Shape(verts, faces, mesh)
+                shape = Shape(verts, faces, mesh_o3d, mesh_trm)
 
         # Importing extra information
         for obj in objList:
@@ -101,6 +105,7 @@ def import_normalised_data():
     labels = np.load(SAVED_DATA + 'labels.npy', allow_pickle=True)
     tot_verts = np.load(SAVED_DATA + 'n_verts.npy', allow_pickle=True)
     tot_faces = np.load(SAVED_DATA + 'n_faces.npy', allow_pickle=True)
+    features = np.load(SAVED_DATA + 'features.npy', allow_pickle=True)
 
     shapes = []
     for filename in os.listdir(NORMALIZED_DATA):
@@ -114,4 +119,4 @@ def import_normalised_data():
 
     print("Existing normalised image set successfully loaded.")
 
-    return shapes, labels
+    return shapes, labels, features

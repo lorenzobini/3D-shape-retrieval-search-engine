@@ -4,7 +4,7 @@ import open3d as o3d
 from visualize import visualize
 
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
-DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep + '0' + os.sep
+DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep + 'test' + os.sep
 DATA_CLASSIFICATION_PRINCETON = DATA_PATH + 'benchmark' + os.sep + 'classification' + os.sep + 'v1' + os.sep + 'coarse1' + os.sep
 
 SAVED_DATA = DATA_PATH + 'cache' + os.sep
@@ -28,10 +28,10 @@ def normalize_data(shapes):
         q1_verts = 1000
         q3_verts = 3000
 
-        # Doing the mesh refinement
-        new_mesh, new_n_verts, new_n_faces = remeshing(shape.get_mesh(), avg_verts, q1_verts, q3_verts)
-        
-        
+        # print(f'Before refinement the mesh has {len(mesh.vertices)} vertices and {len(mesh.triangles)} triangles')
+
+        new_mesh, new_n_verts, new_n_faces = remeshing(shape.get_mesh_o3d(), avg_verts, q1_verts, q3_verts)
+                
         tot_new_verts.append(new_n_verts)
         tot_new_faces.append(new_n_faces)
      
@@ -41,10 +41,7 @@ def normalize_data(shapes):
         for i,vertix in enumerate(verts):
             verts[i] = vertix-center
         new_mesh.vertices = verts
-
-        # orientates the normals in the same direction
-        new_mesh.orient_triangles()
-        
+       
         # rotate based on PCA
         new_mesh = rotate_PCA(new_mesh, shape)
 

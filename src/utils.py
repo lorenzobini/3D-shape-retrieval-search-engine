@@ -164,3 +164,6 @@ def calc_eigenvectors(verts):
     eigenvalues, eigenvectors = np.linalg.eig(A_cov)
 
     return eigenvalues, eigenvectors
+
+def euclidean(x1,y1,z1, x2,y2,z2):
+    return np.sqrt(((x1-x2)**2)+((y1-y2)**2)+((z1-z2)**2))

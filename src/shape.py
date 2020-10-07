@@ -1,4 +1,5 @@
 from open3d import geometry
+from trimesh import base
 # from src.boundingbox import BoundingBox
 from boundingbox import BoundingBox
 
@@ -8,7 +9,8 @@ class Shape:
     id: int
     vertices: [float]
     faces: [int]
-    mesh: geometry.TriangleMesh
+    mesh_o3d: geometry.TriangleMesh
+    mesh_trm: base.Trimesh
     n_verts: int
     n_faces: int
     faces_types: int
@@ -29,11 +31,12 @@ class Shape:
     principle_values: (float, float, float)
     # -------------------------------------------------------
 
-    def __init__(self, vertices, faces, mesh):
+    def __init__(self, vertices, faces, mesh_o3d, mesh_trm):
         self.id = None
         self.vertices = vertices
         self.faces = faces
-        self.mesh = mesh
+        self.mesh_o3d = mesh_o3d
+        self.mesh_trm = mesh_trm
         self.n_verts = len(vertices)
         self.n_faces = len(faces)
         self.faces_types = list(set([x[0] for x in faces]))
@@ -77,16 +80,21 @@ class Shape:
     # Mesh
 
     def set_mesh(self, mesh):
-        self.mesh = mesh
+        self.mesh_o3d = mesh_o3d
 
-    def get_mesh(self) -> geometry.TriangleMesh:
-        return self.mesh
+    def get_mesh_o3d(self) -> geometry.TriangleMesh:
+        return self.mesh_o3d
+
+    def get_mesh_trm(self) -> base.Trimesh:
+        return self.mesh_trm
 
     def delete_mesh(self):
-        self.mesh = None
+        self.mesh_o3d = None
 
-    def is_watertight(self) -> geometry.TriangleMesh.is_watertight:
-        return self.mesh
+    def is_watertight(self) -> base.Trimesh.is_watertight:
+        return self.mesh_trm # return boolean
+    
+
 
     # Counts
 

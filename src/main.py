@@ -1,4 +1,7 @@
 from collections import defaultdict
+import os
+import numpy as np
+import matplotlib.pyplot as plt
 
 from shape import Shape
 from visualize import visualize
@@ -14,7 +17,7 @@ from features   import calculate_metrics
 # from src.features import *
 
 
-import os
+
 
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
 SAVED_DATA = DATA_PATH + 'cache' + os.sep
@@ -28,30 +31,37 @@ def main():
 
     # Step 1: Importing data ---------------------------------
     FORCE_IMPORT = True
+    shapes, labels, features = None, None, None
     if FORCE_IMPORT or len(os.listdir(NORMALIZED_DATA)) == 0:
         # Normalised shapes not present, importing and normalising dataset
         shapes, labels = import_dataset()
 
         # Visualising shapes
-        visualize(shapes, labels)
+        # visualize(shapes, labels)
 
         # Step 2: Normalising and remeshing shapes --------------
         shapes, tot_verts, tot_faces = normalize_data(shapes)
         
         # Visualising normalised shapes
-        visualize(shapes, labels)
+        # visualize(shapes, labels)
+
+        # Step 3: Feature extraction -------------------------------
+        shapes, features = calculate_metrics(shapes)
 
 
     else:
         # Normalised shapes in cache, loading them directly
-        shapes, labels = import_normalised_data()
+        shapes, labels, features = import_normalised_data()
 
         # Visualising normalised shapes
-        visualize(shapes, labels)
-
-
-    # Step 3: Feature extraction -------------------------------
-    calculate_metrics(shapes)
+        # visualize(shapes, labels)
+    # When saved numpy.load returns a numpy.ndarry so this handles that
+    try:
+        features = features.item()
+    except:
+        pass
+    
+   
 
     # ---------------------------------------------------------
     # ONLINE WORKFLOW - QUERYING A SHAPE AND DISPLAYING RESULTS
