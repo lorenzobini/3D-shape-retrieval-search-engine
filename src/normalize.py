@@ -2,9 +2,8 @@ from src.utils import *
 from src.visualize import visualize
 # from utils import *
 # from visualize import visualize
-
 import open3d as o3d
-
+import trimesh
 
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
 DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep + 'test' + os.sep
@@ -33,13 +32,13 @@ def normalize_data(shapes):
 
         # print(f'Before refinement the mesh has {len(mesh.vertices)} vertices and {len(mesh.triangles)} triangles')
 
-        new_mesh, new_n_verts, new_n_faces = remeshing(shape.get_mesh_o3d(), avg_verts, q1_verts, q3_verts)
+        new_mesh, new_n_verts, new_n_faces = remeshing(shape.get_mesh(), avg_verts, q1_verts, q3_verts)
                 
         tot_new_verts.append(new_n_verts)
         tot_new_faces.append(new_n_faces)
      
         # Translate to center
-        center = new_mesh.get_center()
+        center = new_mesh.center_mass
         verts = new_mesh.vertices
         for i,vertix in enumerate(verts):
             verts[i] = vertix-center
@@ -55,12 +54,13 @@ def normalize_data(shapes):
         x_min, y_min, z_min, x_max, y_max, z_max = calculate_box(new_mesh.vertices)
         scale = max([x_max-x_min, y_max-y_min, z_max-z_min])
         ratio = (1/scale)
-        new_mesh.scale(ratio, center=(0,0,0))
+        new_mesh.vertices = new_mesh.vertices*ratio
 
         # Updating shape
         shape.set_vertices(np.asarray(new_mesh.vertices))
-        shape.set_faces(np.asarray(new_mesh.triangles).tolist())
-        shape.set_center(tuple(new_mesh.get_center()))
+        faces = np.insert(np.array(new_mesh.faces), 0, np.full(len(new_mesh.faces),3), axis=1) # makes sure that the
+        shape.set_faces(faces.tolist())
+        shape.set_center(tuple(new_mesh.center_mass))
         shape.set_bounding_box(x_min, y_min, z_min, x_max, y_max, z_max)
         shape.set_scale(scale)
         # TODO: update avg_depth? scale?
@@ -73,8 +73,7 @@ def normalize_data(shapes):
     for shape in remove_meshes(shapes):
         write_off(NORMALIZED_DATA, shape)
         np.save(NORMALIZED_DATA + 'n' + str(shape.get_id()) + '.npy', [shape])
-    # TODO: override tot_verts and tot_faces in file?
-
+   
     print("Normalised shapes saved.")
 
     return shapes, tot_new_verts, tot_new_faces
@@ -82,9 +81,10 @@ def normalize_data(shapes):
 
 # Remeshes shapes that 
 def remeshing(mesh, avg_verts, q1_verts, q3_verts):
-
+    v = o3d.utility.Vector3dVector(np.asarray(mesh.vertices))
+    f = o3d.utility.Vector3iVector(np.asarray(mesh.faces))
+    mesh = o3d.geometry.TriangleMesh(vertices = v, triangles = f)
     voxel_denominator = 32
-    
     while len(mesh.vertices) < q1_verts or len(mesh.vertices) > q3_verts:     
         if len(mesh.vertices) < avg_verts:
             mesh = mesh.subdivide_midpoint(number_of_iterations=1)
@@ -96,10 +96,12 @@ def remeshing(mesh, avg_verts, q1_verts, q3_verts):
             mesh = mesh.simplify_vertex_clustering(voxel_size=voxel_size, contraction=o3d.geometry.SimplificationContraction.Average)
             voxel_denominator = voxel_denominator - 2
             
+    #print(f'After simplifying the mesh has {len(mesh.vertices)} vertices and {len(mesh.triangles)} triangles')
     n_verts = len(mesh.vertices)
     n_faces = len(mesh.triangles)
-    
-    return mesh, n_verts, n_faces
+    new_mesh = trimesh.Trimesh(mesh.vertices, mesh.triangles)
+    # print(type(new_mesh), new_mesh.vertices, new_mesh.faces)
+    return new_mesh, n_verts, n_faces
 
 
 # Read the center of mass from the .txt file
@@ -112,6 +114,7 @@ def read_txt(file):
             break
     return center
 
+
 # Applies the PCA to the vertices of the mesh
 def rotate_PCA(mesh, shape):
     
@@ -122,16 +125,16 @@ def rotate_PCA(mesh, shape):
     mid_eigen = (set([0,1,2]) - set([max_eigen, min_eigen])).pop()
     verts = mesh.vertices
     new_verts = []
-    c = mesh.get_center()
+    c = mesh.center_mass
     for i in range(0, len(verts)):
         v = verts[i]
         p1 = np.dot(v-c, eigenvectors[:,max_eigen])
         p2 = np.dot(v-c, eigenvectors[:,mid_eigen])
         p3 = np.dot(v-c, eigenvectors[:,min_eigen])
         new_verts.append([p1, p2, p3])
-    new_verts = o3d.utility.Vector3dVector(np.array(new_verts))
     mesh.vertices = new_verts
     return mesh
+
 
 def calculate_f(triangle_coords):
     f_i = 0
@@ -139,9 +142,10 @@ def calculate_f(triangle_coords):
         f_i += np.sign(x)*(x**2)
     return f_i
 
+
 def flip_mesh(mesh):
-    triangles = np.zeros((3, len(mesh.triangles)))
-    for i, index in enumerate(mesh.triangles[1:]):
+    triangles = np.zeros((3, len(mesh.faces)))
+    for i, index in enumerate(mesh.faces[1:]):
         x, y, z = [],[],[]
         for num in index:
             vertice = mesh.vertices[num]
@@ -158,7 +162,7 @@ def flip_mesh(mesh):
     f_z = calculate_f(triangles[2])
 
     R = np.array([[np.sign(f_x), 0,0], [0, np.sign(f_y), 0], [0,0, np.sign(f_z)]])
-    mesh.rotate(R, center=mesh.get_center())
+    mesh.vertices = np.matmul(mesh.vertices, R)
     return mesh
 
 

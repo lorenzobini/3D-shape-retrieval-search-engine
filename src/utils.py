@@ -149,7 +149,7 @@ def write_off(path, shape):
     for i in range(0, len(faces)):
         face = [str(x) for x in faces[i]]
         face = ' '.join(face)
-        f.write('3 '+ face + '\n')
+        f.write( face + '\n')
     f.close()
 
 
@@ -163,7 +163,6 @@ def calc_eigenvectors(verts):
     
     A_cov = np.cov(A) # This is returns a 3x3
     eigenvalues, eigenvectors = np.linalg.eig(A_cov)
-
     return eigenvalues, eigenvectors
 
 
@@ -189,3 +188,46 @@ def normalize_hist(hist):
     for hi in hist:
         newhist.append(hi/hsum)
     return newhist
+
+
+def feature_statistics(features, labels):
+    hists, hists2, hists3, hists4, hists5 = [], [], [], [], []
+    for id, featurelist in features.items():
+        label = labels[str(id)][1]
+        # if label == 'wheel':
+        hists.append(featurelist['D1'][0])
+        bin_edges1 = featurelist['D1'][1]
+        hists2.append(featurelist['D2'][0])
+        bin_edges2 = featurelist['D2'][1]
+        hists3.append(featurelist['D3'][0])
+        bin_edges3 = featurelist['D3'][1]
+        hists4.append(featurelist['D4'][0])
+        bin_edges4 = featurelist['D4'][1]
+        hists5.append(featurelist['A3'][0])
+        bin_edges5 = featurelist['A3'][1]
+
+    plt.figure(figsize=[4, 2])
+    for hist in hists:
+        plt.plot(bin_edges1[:-1], hist)
+        plt.ylim(ymax=1.0, ymin=0.0)
+
+    plt.figure(figsize=[4, 2])
+    for hist in hists2:
+        plt.plot(bin_edges2[:-1], hist)
+        plt.ylim(ymax=1.0, ymin=0.0)
+
+    plt.figure(figsize=[4, 2])
+    for hist in hists3:
+        plt.plot(bin_edges3[:-1], hist)
+        plt.ylim(ymax=1.0, ymin=0.0)
+
+    plt.figure(figsize=[4, 2])
+    for hist in hists4:
+        plt.plot(bin_edges4[:-1], hist)
+        plt.ylim(ymax=1.0, ymin=0.0)
+
+    plt.figure(figsize=[4, 2])
+    for hist in hists5:
+        plt.plot(bin_edges5[:-1], hist)
+        plt.ylim(ymax=1.0, ymin=0.0)
+    plt.show()

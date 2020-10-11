@@ -3,10 +3,6 @@ from OpenGL.GL import *
 import numpy as np
 import time
 
-# Imports from other files
-# from src.shape import Shape
-from shape import Shape
-
 
 # Define needed global variabels for rotation, translation, zooming
 xrot, yrot, xspeed, yspeed = 0, 0, 0, 0
@@ -91,7 +87,7 @@ def visualize(shapes_list, labels):
             # Allows handling of quads and triangles
             glBegin(GL_TRIANGLES)
             glColor3f(0.5,0.5,0.5)
-            for number in index:
+            for number in index[1:]:
                 glVertex3f(vertices[number][0], vertices[number][1], vertices[number][2])
             glEnd()
 

@@ -16,10 +16,10 @@ from src.normalize import normalize_data
 from src.dataLoader import import_dataset, import_normalised_data
 from src.features import *
 
-
-
-
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
+
+# TODO: to import the entire dataset remove the '0' and the redundant os.sep, REMOVE FOR FINAL PROGRAM
+DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep # + '0' + os.sep + 'm1' + os.sep
 SAVED_DATA = DATA_PATH + 'cache' + os.sep
 NORMALIZED_DATA = SAVED_DATA + 'processed_data' + os.sep
 
@@ -32,40 +32,57 @@ def main():
     # Step 1: Importing data ---------------------------------
     FORCE_IMPORT = True
     shapes, labels, features = None, None, None
+
     if FORCE_IMPORT or len(os.listdir(NORMALIZED_DATA)) == 0:
         # Normalised shapes not present, importing and normalising dataset
-        shapes, labels = import_dataset()
+        # Dividing import in batches
+        batches = [f.path for f in os.scandir(DATA_SHAPES_PRICETON) if f.is_dir()]
+        for i, batch in enumerate(batches):
 
-        # Visualising shapes
-        # visualize(shapes, labels)
+            shapes, labels = import_dataset(batch)
 
-        # Step 2: Normalising and remeshing shapes --------------
-        shapes, tot_verts, tot_faces = normalize_data(shapes)
-        
-        # Visualising normalised shapes
-        # visualize(shapes, labels)
+            # Visualising shapes
+            # visualize(shapes, labels)
 
-        # Step 3: Feature extraction -------------------------------
-        shapes, features = calculate_metrics(shapes)
+            # Step 2: Normalising and remeshing shapes --------------
+            shapes, tot_verts, tot_faces = normalize_data(shapes)
+
+            # Visualising normalised shapes
+            # visualize(shapes, labels)
+
+            # Step 3: Feature extraction -------------------------------
+            shapes, features = calculate_metrics(shapes)
+
+            print("Progress:" + str((i/len(batches))*100) + "%")
 
 
-    else:
-        # Normalised shapes in cache, loading them directly
-        shapes, labels, features = import_normalised_data()
+        print("Import and normalisation processes completed.")
+        print("Features extracted.")
 
-        # Visualising normalised shapes
-        # visualize(shapes, labels)
+    # Computing statistics
+    feature_statistics(features, labels)
+
+    np.delete(shapes)
+    np.delete(labels)
+    np.delete(tot_faces)
+    np.delete(tot_verts)
+    np.delete(features)
+
+
     # When saved numpy.load returns a numpy.ndarry so this handles that
     try:
         features = features.item()
+        labels = labels.item()
     except:
         pass
-    
-   
+
+
 
     # ---------------------------------------------------------
     # ONLINE WORKFLOW - QUERYING A SHAPE AND DISPLAYING RESULTS
     # ---------------------------------------------------------
+    features = np.load(SAVED_DATA + "features.npy")
+
     pass
 
 
