@@ -1,7 +1,5 @@
 from src.utils import *
-from src.visualize import visualize
 # from utils import *
-# from visualize import visualize
 import open3d as o3d
 import trimesh
 

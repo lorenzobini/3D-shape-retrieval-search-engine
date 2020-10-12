@@ -37,6 +37,7 @@ def main():
         # Normalised shapes not present, importing and normalising dataset
         # Dividing import in batches
         batches = [f.path for f in os.scandir(DATA_SHAPES_PRICETON) if f.is_dir()]
+        # batches = [batches[0]] # TODO: replace 0 with the batch to import for partial import, remove for final progr.
         for i, batch in enumerate(batches):
 
             shapes, labels = import_dataset(batch)

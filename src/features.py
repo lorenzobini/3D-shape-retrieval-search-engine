@@ -11,11 +11,11 @@ from progress.bar import Bar
 # Other file imports
 # from shape import Shape
 # from boundingbox import BoundingBox
-# from utils import calc_eigenvectors, normalize_hist, compute_angle
+# from utils import *
 from src.utils import *
 from src.boundingbox import BoundingBox
 from src.shape import Shape
-from src.utils import calc_eigenvectors
+
 
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
 SAVED_DATA = DATA_PATH + 'cache' + os.sep
