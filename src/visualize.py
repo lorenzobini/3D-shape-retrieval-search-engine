@@ -57,7 +57,6 @@ def visualize(shapes_list, labels):
     shapes = shapes_list
     vertices = np.array(shapes[i].vertices)
     indices = np.array(shapes[i].faces)
-
     # set background color of window
     glClearColor(0.9, 0.9, 0.9, 1)
 
@@ -216,7 +215,7 @@ def key_callback(window, key, scancode, action, mods):
             i = 0
         else:
             i += 1
-        print("Next model which is: " + str(i))
+        print("Next model which is: " + str(shapes[i].id))
         vertices = np.array(shapes[i].vertices)
         indices = np.array(shapes[i].faces)
     elif key == GLFW_KEY_V:

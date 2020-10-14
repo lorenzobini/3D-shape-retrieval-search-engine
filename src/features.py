@@ -1,20 +1,16 @@
-# import open3d as o3d
-import numpy as np
-import trimesh as trm
 import math
-import os
-import matplotlib.pyplot as plt
 import random
-from progress.bar import Bar
+from scipy import spatial
 
 
 # Other file imports
-# from shape import Shape
-# from boundingbox import BoundingBox
-# from utils import *
-from src.utils import *
-from src.boundingbox import BoundingBox
-from src.shape import Shape
+from shape import Shape
+from boundingbox import BoundingBox
+from utils import *
+# from src.utils import *
+# from src.boundingbox import BoundingBox
+# from src.shape import Shape
+# from src.utils import calc_eigenvectors
 
 
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
@@ -26,7 +22,7 @@ def calculate_metrics(shapes):
 
     # If some features are present, load them
     if os.path.isfile(SAVED_DATA + "features.npy"):
-        features = np.load(SAVED_DATA + "features.npy")
+        features = np.load(SAVED_DATA + "features.npy", allow_pickle=True)
         try:
             features = features.item()
         except:
@@ -34,91 +30,81 @@ def calculate_metrics(shapes):
     else:
         features = {}
 
-    # Setting up progress bar
-    bar = Bar('Processing', max=len(shapes)+1)
-
+    V, A, C, BB, D, E = [], [],[],[],[],[]
      # calculate the metrics for each shape
     for shape in shapes:
-        bar.next()
         id = shape.get_id()
-        features[id] = {}
+        features[id] = calculate_single_shape_metrics(shape)
 
-        # calculate the default metrics
-        features[id]["volume"] = volume(shape)
-        features[id]["area"] = area(shape)
-        features[id]["compactness"] = compactness(features[id]["area"], features[id]["volume"])
-        features[id]["bbox_volume"] = bbox_volume(shape)
-        features[id]["diameter"] = diameter(shape)
-        features[id]["eccentricity"] = eccentricity(shape)
+        # append to list for standardization measure
+        V.append(features[id]["volume"])
+        A.append(features[id]["area"])
+        C.append(features[id]["compactness"])
+        BB.append(features[id]["bbox_volume"])
+        D.append(features[id]["diameter"])
+        E.append(features[id]["eccentricity"])
 
-        # Distributions
-        distributions = calc_distributions(shape)
-        features[id]["A3"] = distributions["A3"]
-        features[id]["D1"] = distributions["D1"]
-        features[id]["D2"] = distributions["D2"]
-        features[id]["D3"] = distributions["D3"]
-        features[id]["D4"] = distributions["D4"]
-
-    bar.next()
-    bar.finish()
     print("Done calculating the features.")
+    print("Standardizing the features.")
+    features = standardize(features, V, A, C, BB, D, E)
+
+    print("Saving the features.")
+
     # Saving features to disk
     np.save(SAVED_DATA + "features.npy", features)
 
     return shapes, features
 
 
+# Calculate features for a single shape
+def calculate_single_shape_metrics(shape):
+    features = {}
+
+    # calculate the default metrics
+    features["volume"] = volume(shape)
+    features["area"] = area(shape)
+    features["compactness"] = compactness(features["area"], features["volume"])
+    features["bbox_volume"] = bbox_volume(shape)
+    features["diameter"] = diameter(shape)
+    features["eccentricity"] = eccentricity(shape)
+
+    # Distributions
+    distributions = calc_distributions(shape)
+    features["A3"] = distributions["A3"]
+    features["D1"] = distributions["D1"]
+    features["D2"] = distributions["D2"]
+    features["D3"] = distributions["D3"]
+    features["D4"] = distributions["D4"]
+
+    return features
+
+
 def volume(shape):  
 
     mesh = shape.get_mesh()
-    # TODO: check if we go for this much easier
-    volume = mesh.convex_hull.volume
-    
-    #TODO: what the hell does this?
-    # print('Volume : ', volume)
-    # print("hull volume: ", mesh.convex_hull.volume)
+    # Take the convex hull: the smallest enclosing convex polyhedron
+    ch_verts = mesh.convex_hull.vertices
+    ch_faces = mesh.convex_hull.faces
+    center = shape.get_center()
+    volume = float(0)
 
-    # # The mesh must be closed (watertight) to compute the volume
-    # if shape.is_watertight():
-        
-    #     #print('is watertight')
+    if mesh.convex_hull.is_volume:
+        for face in ch_faces:
+            p1 = np.subtract(ch_verts[face[0]], center)
+            p2 = np.subtract(ch_verts[face[1]], center)
+            p3 = np.subtract(ch_verts[face[2]], center)
 
-    #     trm.repair.fix_winding(mesh)
-    #     # Check that all triangles are consistently oriented over the surface
-    #     if shape.get_mesh().is_winding_consistent:
-    #         #print('is winding consistent')
-            
-    #         # TODO: Do pre-processing steps before feature extraction
-    #         trm.repair.fix_normals(mesh)
-    #         trm.repair.fix_inversion(mesh)
-    #         trm.repair.fill_holes(mesh)
-    #         mesh.remove_degenerate_faces()
-
-    #         # Check if the mesh has all the properties required to represent a valid volume
-    #         if mesh.is_volume:
-    #             volume = mesh.volume
-    #         else:
-    #             print('Not a valid mesh to calculate the volume')
-    #             pass
-
-    # print("volume after?: ", volume)
+            volume = volume + (np.abs(np.dot(p1, np.cross(p2, p3))) / 6)
     return volume
 
 
 def area(shape):
-    mesh_trm = shape.get_mesh()
-    area = mesh_trm.area
-
-    return area
+    mesh = shape.get_mesh()
+    return mesh.area
 
 def compactness(V, S):
-    return pow(S, 3) / (36*math.pi*(pow(V, 2)))
-    # sphericity = 1/ compactness # TODO: why? 
-    
-    # return compactness
+    return pow(S, 3) / (36*math.pi*(pow(V, 2))) # Volume of the shape's axis-aligned bounding box
 
-
-# Volume of the shape's axis-aligned bounding box
 def bbox_volume(shape):
     bbox = shape.get_buinding_box()
     x = bbox.get_xmax() - bbox.get_xmin()
@@ -153,23 +139,24 @@ def eccentricity(shape):
 def calc_distributions(shape):
     descriptors = {}
 
-    verticeList = random.choices(list(shape.get_vertices()), k=1000)  # select 1000 random vertices
+    verticeList = random.choices(list(shape.get_vertices()), k=5000)  # select 1000 random vertices
     center  = shape.get_center()
+
     # Computing D1 -----------------------
     descriptors["D1"] = calc_D1(center, verticeList)
 
-    verticeList = random.sample(list(shape.get_vertices()), k=1000)
+    verticeList = random.choices(list(shape.get_vertices()), k=1000)
 
     # Computing D2 -----------------------
     verticesOne = verticeList[:]
     verticesTwo = verticeList[500:]
 
     descriptors["D2"] = calc_D2(verticesOne, verticesTwo)
-    verticeList = random.sample(list(shape.get_vertices()), k=30)
+    verticeList = random.sample(list(shape.get_vertices()), k=150)
     # Computing A3, D3, D4 ---------------
-    verticesOne = verticeList[:10]
-    verticesTwo = verticeList[10:20]
-    verticesThree = verticeList[20:]
+    verticesOne = verticeList[:50]
+    verticesTwo = verticeList[50:100]
+    verticesThree = verticeList[100:]
 
     A3 = []
     D3 = []
@@ -185,7 +172,7 @@ def calc_distributions(shape):
                 D4.append(calc_D4(center, a, b, c))
 
     # Computing Histogram A3
-    hist, bin_edges = np.histogram(np.array(A3), bins=np.arange(0.0, 180.0, 18))
+    hist, bin_edges = np.histogram(np.array(A3), bins=np.arange(0.0, 2.5, 0.25))
     hist = normalize_hist(hist)
 
     descriptors["A3"] = (hist, bin_edges)
@@ -214,13 +201,14 @@ def calc_A3(a, b, c):
 
 # Distance between barycenter and random vertex, returns histogram vector and bin_edges
 def calc_D1(center, vertices):
-    (xc, yc, zc) = center
     D = []
+    (xc, yc, zc) = center
 
     for x, y, z in vertices:
         D.append(np.linalg.norm([[x, y, z], [ xc, yc, zc]]))
+        # D.append(spatial.distance.euclidean([x,y,z], center))
     # crate histogram with 10 bins from 0 - 1.0
-    hist, bin_edges = np.histogram(np.array(D), bins= np.arange(0,1, 0.1))
+    hist, bin_edges = np.histogram(np.array(D), bins = np.arange(0, 1.5, 0.15))
     hist = normalize_hist(hist)
 
     return (hist, bin_edges)
@@ -234,10 +222,10 @@ def calc_D2(verticesOne, verticesTwo):
     # Loop over both sets to create the vertice combinations, 250000 total
     for x1, y1, z1 in verticesOne:
         for x2, y2, z2 in verticesTwo:
-            D.append(np.linalg.norm([[x1, y1, z1] , [ x2, y2, z2]]))
+            D.append(spatial.distance.cityblock([x1, y1, z1] , [ x2, y2, z2]))
     # Create histogram with 10 bins from 0 to 1.25 (as there where some values above 1)
 
-    hist, bin_edges = np.histogram(np.array(D), bins= np.arange(0, 1.25, 0.125))
+    hist, bin_edges = np.histogram(np.array(D), bins= np.arange(0, 2, 0.2))
     hist = normalize_hist(hist)
 
     return(hist, bin_edges)
@@ -263,20 +251,34 @@ def calc_D3(a, b, c):
 
 # Cube root of volume of tetrahedron formed by 4 random vertices
 def calc_D4(center, p1, p2, p3):
-
+    # TODO: change to four random points, sample new point everytime. 
     p1_c = np.subtract(p1, center)
     p2_c = np.subtract(p2, center)
     p3_c = np.subtract(p3, center)
 
     volume = np.abs(np.dot(p1_c, np.cross(p2_c, p3_c))) / 6
-
     return np.cbrt(volume)
 
 
+# Standardize the non-histogram features using 
+def standardize(features, V, C, A, BB, D, E):
+    a_std = np.std(A)
+    a_mean = np.mean(A)
+    A_t = [(x-a_mean)/a_std for x in A]
+    for id, featuresList in features.items():
+        v = featuresList["volume"]
+        a = featuresList['area']
+        c = featuresList['compactness']
+        bb = featuresList["bbox_volume"]
+        d = featuresList["diameter"]
+        e = featuresList["eccentricity"]
 
+        features[id]['volume'] = (v-np.mean(V))/np.std(V)
+        features[id]['area'] = (a-np.mean(A))/np.std(A)
+        features[id]['compactness'] = (c-np.mean(C))/np.std(C)
+        features[id]['bbox_volume'] = (bb-np.mean(BB))/np.std(BB)
+        features[id]['diameter'] = (d - np.mean(D))/np.mean(D)
+        features[id]['eccentricity'] = (e - np.mean(E)/np.mean(E))
 
-
-
-
-
-
+    return features
+        

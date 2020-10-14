@@ -15,6 +15,7 @@ from src.utils import *
 
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
 
+
 DATA_CLASSIFICATION_PRINCETON = DATA_PATH + 'benchmark' + os.sep + 'classification' + os.sep + 'v1' + os.sep + 'coarse1' + os.sep
 
 SAVED_DATA = DATA_PATH + 'cache' + os.sep
@@ -51,13 +52,19 @@ def import_dataset(BATCH_PATH) -> ([Shape], defaultdict):
 
         # Add the dictionary of label, format of 'mesh number': (classname, classnumber)
         labels = temp1
+    # Opens the file with the excluded models
+    file = open(SAVED_DATA + "exclude.txt")
+    exclude = list(file.readline().split(','))
+    exclude = [x.strip() for x in exclude]
 
     # navigating through the dataset to find .off and .ply files
     for dirName, subdirList, objList in os.walk(BATCH_PATH):
         # Importing the shape first
         shape = None
         for obj in objList:
-            if obj.endswith('.off'):
+            if obj.split(".")[0].split("_")[0].split("m")[1] in exclude: # Exclude if the shape is in the exlude list
+                next
+            elif obj.endswith('.off'):
                 file = open(dirName + '\\' + obj, "r")
                 verts, faces, n_verts, n_faces = read_off(file)
                 mesh = trm.load_mesh(dirName + '\\' + obj)
@@ -77,7 +84,9 @@ def import_dataset(BATCH_PATH) -> ([Shape], defaultdict):
 
         # Importing extra information
         for obj in objList:
-            if obj.endswith('.txt'):
+            if obj.split(".")[0].split("_")[0].split("m")[1] in exclude: 
+                next
+            elif obj.endswith('.txt'):
                 file = open(dirName + '\\' + obj, "r")
                 shape = read_info(file, shape)
         if shape is not None:
@@ -88,7 +97,6 @@ def import_dataset(BATCH_PATH) -> ([Shape], defaultdict):
             shapes.append(shape)
 
     np.save(SAVED_DATA + 'labels.npy', labels)
-
     return shapes, labels
 
 

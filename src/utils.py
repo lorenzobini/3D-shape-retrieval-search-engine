@@ -3,6 +3,13 @@ import matplotlib.pyplot as plt
 import os
 import re
 import copy
+import trimesh as trm
+from tkinter import *
+from tkinter import ttk
+from tkinter.filedialog import askopenfilename
+
+from src.shape import Shape
+# from shape import Shape
 
 # Parse a .off file
 def read_off(file):
@@ -162,7 +169,7 @@ def calc_eigenvectors(verts):
     A[2] = np.array([x[2] for x in verts]) # third row is all the z-coords
     
     A_cov = np.cov(A) # This is returns a 3x3
-    eigenvalues, eigenvectors = np.linalg.eig(A_cov)
+    eigenvalues, eigenvectors = np.linalg.eigh(A_cov)
     return eigenvalues, eigenvectors
 
 
@@ -177,7 +184,7 @@ def compute_angle(a, b, c):
 
     cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
     angle = np.arccos(np.abs(cosine_angle))
-    return np.degrees(angle)
+    return angle
 
 
 # Normalizing a histogram H = {hi} is simple: Replace each value hi by hi/ Si hi. This way, each bar becomes a percentage
@@ -231,3 +238,42 @@ def feature_statistics(features, labels):
         plt.plot(bin_edges5[:-1], hist)
         plt.ylim(ymax=1.0, ymin=0.0)
     plt.show()
+
+
+def pick_file():
+    DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep + 'benchmark' + os.sep + 'db' + os.sep
+
+    root = Tk()
+    root.filename = askopenfilename(initialdir=DATA_PATH,
+                                    filetypes =(("OFF files", "*.off"),("PLY files", "*.ply"),("All Files","*.*")),
+                                    title="Choose a file."
+                                   )
+    print(root.filename)
+
+    try:
+        with open(root.filename, 'r') as UseFile:
+            UseFile.read()
+    except:
+        raise FileNotFoundError
+
+    if str(root.filename).endswith(".off"):
+        file = open(root.filename, 'r')
+        verts, faces, n_verts, n_faces = read_off(file)
+        mesh = trm.load_mesh(root.filename)
+
+        shape = Shape(verts, faces, mesh)
+
+    elif str(root.filename).endswith(".ply"):
+        file = open(root.filename, "r")
+        verts, faces, n_verts, n_faces = parse_ply(file)
+        mesh = trm.load_mesh(root.filename)
+
+        shape = Shape(verts, faces, mesh)
+
+    else:
+        raise FileExistsError
+
+    return shape
+
+
+
