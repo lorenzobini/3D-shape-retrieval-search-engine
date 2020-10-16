@@ -7,7 +7,7 @@ import trimesh
 import os
 
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
-DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep + 'test' + os.sep
+DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep + '0' + os.sep
 DATA_CLASSIFICATION_PRINCETON = DATA_PATH + 'benchmark' + os.sep + 'classification' + os.sep + 'v1' + os.sep + 'coarse1' + os.sep
 
 SAVED_DATA = DATA_PATH + 'cache' + os.sep
@@ -25,8 +25,7 @@ def normalize_data(shapes):
         shape, new_n_verts, new_n_faces = normalize_shape(shape)
         tot_new_verts.append(new_n_verts)
         tot_new_faces.append(new_n_faces)
-
-     
+   
     
     print("Shapes normalised succesfully.")
     print("Saving normalised shapes in cache.")
@@ -63,6 +62,7 @@ def normalize_shape(shape: Shape):
     scale = max([x_max-x_min, y_max-y_min, z_max-z_min])
     ratio = (1/scale)
     new_mesh.vertices *= ratio
+    x_min, y_min, z_min, x_max, y_max, z_max = calculate_box(new_mesh.vertices)
 
     # Updating shape
     shape.set_vertices(np.asarray(new_mesh.vertices))
@@ -110,7 +110,6 @@ def rotate_PCA(mesh, shape):
     verts = mesh.vertices
     new_verts = []
     c = mesh.center_mass
-    print(eigenvectors[:,max_eigen], verts[0])
     for i in range(0, len(verts)):
         v = verts[i]
         p1 = np.dot(v-c, eigenvectors[:,max_eigen])

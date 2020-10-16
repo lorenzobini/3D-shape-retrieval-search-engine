@@ -10,14 +10,13 @@ from utils import *
 # from src.utils import *
 # from src.boundingbox import BoundingBox
 # from src.shape import Shape
-# from src.utils import calc_eigenvectors
 
 
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
 SAVED_DATA = DATA_PATH + 'cache' + os.sep
 
 
-def calculate_metrics(shapes):
+def calculate_metrics(shapes, last_batch = False):
     print("Calculating all the object features...")
 
     # If some features are present, load them
@@ -30,23 +29,12 @@ def calculate_metrics(shapes):
     else:
         features = {}
 
-    V, A, C, BB, D, E = [], [],[],[],[],[]
      # calculate the metrics for each shape
     for shape in shapes:
         id = shape.get_id()
         features[id] = calculate_single_shape_metrics(shape)
 
-        # append to list for standardization measure
-        V.append(features[id]["volume"])
-        A.append(features[id]["area"])
-        C.append(features[id]["compactness"])
-        BB.append(features[id]["bbox_volume"])
-        D.append(features[id]["diameter"])
-        E.append(features[id]["eccentricity"])
-
     print("Done calculating the features.")
-    print("Standardizing the features.")
-    features = standardize(features, V, A, C, BB, D, E)
 
     print("Saving the features.")
 
@@ -258,27 +246,3 @@ def calc_D4(center, p1, p2, p3):
 
     volume = np.abs(np.dot(p1_c, np.cross(p2_c, p3_c))) / 6
     return np.cbrt(volume)
-
-
-# Standardize the non-histogram features using 
-def standardize(features, V, C, A, BB, D, E):
-    a_std = np.std(A)
-    a_mean = np.mean(A)
-    A_t = [(x-a_mean)/a_std for x in A]
-    for id, featuresList in features.items():
-        v = featuresList["volume"]
-        a = featuresList['area']
-        c = featuresList['compactness']
-        bb = featuresList["bbox_volume"]
-        d = featuresList["diameter"]
-        e = featuresList["eccentricity"]
-
-        features[id]['volume'] = (v-np.mean(V))/np.std(V)
-        features[id]['area'] = (a-np.mean(A))/np.std(A)
-        features[id]['compactness'] = (c-np.mean(C))/np.std(C)
-        features[id]['bbox_volume'] = (bb-np.mean(BB))/np.std(BB)
-        features[id]['diameter'] = (d - np.mean(D))/np.mean(D)
-        features[id]['eccentricity'] = (e - np.mean(E)/np.mean(E))
-
-    return features
-        

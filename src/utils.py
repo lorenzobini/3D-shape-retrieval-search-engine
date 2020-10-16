@@ -8,9 +8,11 @@ from tkinter import *
 from tkinter import ttk
 from tkinter.filedialog import askopenfilename
 
-from src.shape import Shape
-# from shape import Shape
+# from src.shape import Shape
+from shape import Shape
 
+DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
+SAVED_DATA = DATA_PATH + 'cache' + os.sep
 # Parse a .off file
 def read_off(file):
     if 'OFF' != file.readline().strip():
@@ -105,31 +107,6 @@ def calculate_box(vertices):
     return [min(x_coords),min(y_coords), min(z_coords), max(x_coords), max(y_coords), max(z_coords)]
 
 
-# Code to show a histogram
-def show_graph(faces, avg, sd):
-    hist, bin_edges = np.histogram(faces, bins = np.arange(0, 10000, 250))
-
-    plt.figure(figsize=[10, 8])
-
-    plt.bar(bin_edges[:-1], hist, width=250, color='#0504aa', alpha=0.7)
-    plt.xlim(min(bin_edges), max(bin_edges))
-    plt.grid(axis='y', alpha=0.75)
-    plt.xlabel('Number of Vertices', fontsize=15)
-    plt.ylabel('Frequency', fontsize=15)
-    plt.xticks(fontsize=15)
-    plt.yticks(fontsize=15)
-    plt.title('Vertices Distribution Histogram', fontsize=15)
-
-    plt.show()
-
-
-# Function to find a file given a certain path
-def find(name, path):
-    for root, dirs, files in os.walk(path):
-        if name in files:
-            return os.path.join(root, name)
-
-
 # Function that removes TriangleMesh objects for saving
 def remove_meshes(shapes):
     new_shapes = []
@@ -173,10 +150,6 @@ def calc_eigenvectors(verts):
     return eigenvalues, eigenvectors
 
 
-def euclidean(x1,y1,z1, x2,y2,z2):
-    return np.sqrt(((x1-x2)**2)+((y1-y2)**2)+((z1-z2)**2))
-
-
 # Compute the angle between 3 points
 def compute_angle(a, b, c):
     ba = a - b
@@ -196,84 +169,49 @@ def normalize_hist(hist):
         newhist.append(hi/hsum)
     return newhist
 
+# Standardize the non-histogram features 
+def standardize(features):
+    V, A, C, BB, D, E = [],[],[],[],[],[]
+    for id, featuresList in features.items():
+        V.append(featuresList["volume"])
+        A.append(featuresList['area'])
+        C.append(featuresList['compactness'])
+        BB.append(featuresList["bbox_volume"])
+        D.append(featuresList["diameter"])
+        E.append(featuresList["eccentricity"])
+    
+    sdVals = save_standardization_vals(V, A, C, BB, D, E)
 
-def feature_statistics(features, labels):
-    hists, hists2, hists3, hists4, hists5 = [], [], [], [], []
-    for id, featurelist in features.items():
-        label = labels[str(id)][1]
-        # if label == 'wheel':
-        hists.append(featurelist['D1'][0])
-        bin_edges1 = featurelist['D1'][1]
-        hists2.append(featurelist['D2'][0])
-        bin_edges2 = featurelist['D2'][1]
-        hists3.append(featurelist['D3'][0])
-        bin_edges3 = featurelist['D3'][1]
-        hists4.append(featurelist['D4'][0])
-        bin_edges4 = featurelist['D4'][1]
-        hists5.append(featurelist['A3'][0])
-        bin_edges5 = featurelist['A3'][1]
+    for id, featuresList in features.items():
+        features[id]['volume'] = (featuresList["volume"]-sdVal["V_mean"])/sdVals["V_std"]
+        features[id]['area'] = (featuresList['area']-sdVal["A_mean"])/sdVals["A_std"]
+        features[id]['compactness'] = (featuresList['compactness']-sdVal["C_mean"])/sdVals["C_std"]
+        features[id]['bbox_volume'] = (featuresList["bbox_volume"]-sdVal["BB_mean"])/sdVals["BB_std"]
+        features[id]['diameter'] = (featuresList["diameter"] - sdVal["D_mean"])/sdVals["D_std"]
+        features[id]['eccentricity'] = (featuresList["eccentricity"] - sdVal["E_mean"])/sdVals["E_std"]
+    
+    np.save(SAVED_DATA + "features.npy", features)
+    np.save(SAVED_DATA + "standardization_values.npy", sdVals)
+    return features
 
-    plt.figure(figsize=[4, 2])
-    for hist in hists:
-        plt.plot(bin_edges1[:-1], hist)
-        plt.ylim(ymax=1.0, ymin=0.0)
+def save_standardization_vals(V, A, C, BB, D, E):
+    standardVals = {}
+    standardVals["V_mean"] = np.mean(V)
+    standardVals["V_std"] = np.std(V)
 
-    plt.figure(figsize=[4, 2])
-    for hist in hists2:
-        plt.plot(bin_edges2[:-1], hist)
-        plt.ylim(ymax=1.0, ymin=0.0)
+    standardVals["A_mean"] = np.mean(A)
+    standardVals["A_std"] = np.std(A)
 
-    plt.figure(figsize=[4, 2])
-    for hist in hists3:
-        plt.plot(bin_edges3[:-1], hist)
-        plt.ylim(ymax=1.0, ymin=0.0)
+    standardVals["C_mean"] = np.mean(C)
+    standardVals["C_std"] = np.std(C)
 
-    plt.figure(figsize=[4, 2])
-    for hist in hists4:
-        plt.plot(bin_edges4[:-1], hist)
-        plt.ylim(ymax=1.0, ymin=0.0)
+    standardVals["BB_mean"] = np.mean(BB)
+    standardVals["BB_std"] = np.std(BB)
 
-    plt.figure(figsize=[4, 2])
-    for hist in hists5:
-        plt.plot(bin_edges5[:-1], hist)
-        plt.ylim(ymax=1.0, ymin=0.0)
-    plt.show()
+    standardVals["D_mean"] = np.mean(D)
+    standardVals["D_std"] = np.std(D)
 
+    standardVals["E_mean"] = np.mean(E)
+    standardVals["E_std"] = np.std(E)
 
-def pick_file():
-    DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep + 'benchmark' + os.sep + 'db' + os.sep
-
-    root = Tk()
-    root.filename = askopenfilename(initialdir=DATA_PATH,
-                                    filetypes =(("OFF files", "*.off"),("PLY files", "*.ply"),("All Files","*.*")),
-                                    title="Choose a file."
-                                   )
-    print(root.filename)
-
-    try:
-        with open(root.filename, 'r') as UseFile:
-            UseFile.read()
-    except:
-        raise FileNotFoundError
-
-    if str(root.filename).endswith(".off"):
-        file = open(root.filename, 'r')
-        verts, faces, n_verts, n_faces = read_off(file)
-        mesh = trm.load_mesh(root.filename)
-
-        shape = Shape(verts, faces, mesh)
-
-    elif str(root.filename).endswith(".ply"):
-        file = open(root.filename, "r")
-        verts, faces, n_verts, n_faces = parse_ply(file)
-        mesh = trm.load_mesh(root.filename)
-
-        shape = Shape(verts, faces, mesh)
-
-    else:
-        raise FileExistsError
-
-    return shape
-
-
-
+    return standardVals

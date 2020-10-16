@@ -33,6 +33,7 @@ i = 0
 vertices = None
 indices = None
 shapes = None
+saves = []
 
 
 # Initializes the GL screen
@@ -109,6 +110,7 @@ def visualize(shapes_list, labels):
         glfw.swap_buffers(window)
 
     # terminate glfw, free up allocated resources
+    print(saves)
     glfw.terminate()
 
 
@@ -147,7 +149,7 @@ def window_resize(window, width, height):
 
 
 def key_callback(window, key, scancode, action, mods):
-    global z, xspeed, yspeed, rotation, xas, yas, vertices, indices, i , DRAW_EDGES
+    global z, xspeed, yspeed, rotation, xas, yas, vertices, indices, i , DRAW_EDGES, saves
     # avoid thrashing this procedure 
     time.sleep(0.01)
 
@@ -211,7 +213,7 @@ def key_callback(window, key, scancode, action, mods):
     elif key == 340:  #Ignore the shift key
         pass
     elif key == GLFW_ENTER:  # For moving through the different meshes
-        if i == len(indices) or len(indices) == 1:
+        if i == (len(shapes)-1) or len(shapes) == 1:
             i = 0
         else:
             i += 1
@@ -225,6 +227,9 @@ def key_callback(window, key, scancode, action, mods):
         else: 
             print("Edges are not drawn.")
             DRAW_EDGES = False
+    elif key == 83:
+        saves.append(shapes[i].id)
+        print(len(saves))
     else:
         print("Key %d pressed. No action there yet.\n"%(key))
 
