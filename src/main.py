@@ -65,6 +65,7 @@ def main():
         
         # Standarize numeric features
         features = standardize(features.item())
+
         print("Import and normalisation processes completed.")
         print("Features extracted.")
 
@@ -81,10 +82,11 @@ def main():
 
     try:
         features = features.item()
+        labels = labels.item()
     except:
         pass
     
-        
+
     '''
     # Retrieving shape
     print("\n----------------------------------------------------")

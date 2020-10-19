@@ -98,6 +98,43 @@ def read_info(file, shape):
     return shape
 
 
+def pick_file():
+    DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep + 'benchmark' + os.sep + 'db' + os.sep
+
+    root = Tk()
+    root.filename = askopenfilename(initialdir=DATA_PATH,
+                                    filetypes =(("OFF files", "*.off"),("PLY files", "*.ply"),("All Files","*.*")),
+                                    title="Choose a file."
+                                   )
+    print(root.filename)
+
+    try:
+        with open(root.filename, 'r') as UseFile:
+            UseFile.read()
+    except:
+        raise FileNotFoundError
+
+    if str(root.filename).endswith(".off"):
+        file = open(root.filename, 'r')
+        verts, faces, n_verts, n_faces = read_off(file)
+        mesh = trm.load_mesh(root.filename)
+
+        shape = Shape(verts, faces, mesh)
+
+    elif str(root.filename).endswith(".ply"):
+        file = open(root.filename, "r")
+        verts, faces, n_verts, n_faces = parse_ply(file)
+        mesh = trm.load_mesh(root.filename)
+
+        shape = Shape(verts, faces, mesh)
+
+    else:
+        raise FileExistsError
+
+    return shape
+
+
+
 def calculate_box(vertices):
     
     x_coords = [x[0] for x in vertices]
@@ -183,12 +220,12 @@ def standardize(features):
     sdVals = save_standardization_vals(V, A, C, BB, D, E)
 
     for id, featuresList in features.items():
-        features[id]['volume'] = (featuresList["volume"]-sdVal["V_mean"])/sdVals["V_std"]
-        features[id]['area'] = (featuresList['area']-sdVal["A_mean"])/sdVals["A_std"]
-        features[id]['compactness'] = (featuresList['compactness']-sdVal["C_mean"])/sdVals["C_std"]
-        features[id]['bbox_volume'] = (featuresList["bbox_volume"]-sdVal["BB_mean"])/sdVals["BB_std"]
-        features[id]['diameter'] = (featuresList["diameter"] - sdVal["D_mean"])/sdVals["D_std"]
-        features[id]['eccentricity'] = (featuresList["eccentricity"] - sdVal["E_mean"])/sdVals["E_std"]
+        features[id]['volume'] = (featuresList["volume"]-sdVals["V_mean"])/sdVals["V_std"]
+        features[id]['area'] = (featuresList['area']-sdVals["A_mean"])/sdVals["A_std"]
+        features[id]['compactness'] = (featuresList['compactness']-sdVals["C_mean"])/sdVals["C_std"]
+        features[id]['bbox_volume'] = (featuresList["bbox_volume"]-sdVals["BB_mean"])/sdVals["BB_std"]
+        features[id]['diameter'] = (featuresList["diameter"] - sdVals["D_mean"])/sdVals["D_std"]
+        features[id]['eccentricity'] = (featuresList["eccentricity"] - sdVals["E_mean"])/sdVals["E_std"]
     
     np.save(SAVED_DATA + "features.npy", features)
     np.save(SAVED_DATA + "standardization_values.npy", sdVals)

@@ -140,11 +140,11 @@ def calc_distributions(shape):
     verticesTwo = verticeList[500:]
 
     descriptors["D2"] = calc_D2(verticesOne, verticesTwo)
-    verticeList = random.sample(list(shape.get_vertices()), k=150)
+    verticeList = random.sample(list(shape.get_vertices()), k=195)
     # Computing A3, D3, D4 ---------------
-    verticesOne = verticeList[:50]
-    verticesTwo = verticeList[50:100]
-    verticesThree = verticeList[100:]
+    verticesOne = verticeList[:65]
+    verticesTwo = verticeList[65:130]
+    verticesThree = verticeList[130:]
 
     A3 = []
     D3 = []
@@ -156,23 +156,26 @@ def calc_distributions(shape):
                 A3.append(calc_A3(a, b, c))
                 # Computing D3 for the current combination
                 D3.append(calc_D3(a, b, c))
-                # Computing D4 for the current combination
-                D4.append(calc_D4(center, a, b, c))
+                while True:
+                    d = random.sample(list(shape.get_vertices()), k =1)[0]
+                    if d is not a and d is not b and d is not c:
+                        D4.append(calc_D4(a, b, c, d))
+                        break
 
     # Computing Histogram A3
-    hist, bin_edges = np.histogram(np.array(A3), bins=np.arange(0.0, 2.5, 0.25))
+    hist, bin_edges = np.histogram(np.array(A3), bins=np.arange(0.0, 2.75, 0.25))
     hist = normalize_hist(hist)
 
     descriptors["A3"] = (hist, bin_edges)
 
     # Computing Histogram D3
-    hist, bin_edges = np.histogram(np.array(D3), bins=np.arange(0.0, 0.75, 0.075))
+    hist, bin_edges = np.histogram(np.array(D3), bins=np.arange(0.0, 0.825, 0.075))
     hist = normalize_hist(hist)
 
     descriptors["D3"] = (hist, bin_edges)
 
     # Computing Histogram D4
-    hist, bin_edges = np.histogram(np.array(D4), bins=np.arange(0.0, 0.75, 0.075))
+    hist, bin_edges = np.histogram(np.array(D4), bins=np.arange(0.0, 0.55, 0.05))
     hist = normalize_hist(hist)
 
     descriptors["D4"] = (hist, bin_edges)
@@ -196,7 +199,7 @@ def calc_D1(center, vertices):
         D.append(np.linalg.norm([[x, y, z], [ xc, yc, zc]]))
         # D.append(spatial.distance.euclidean([x,y,z], center))
     # crate histogram with 10 bins from 0 - 1.0
-    hist, bin_edges = np.histogram(np.array(D), bins = np.arange(0, 1.5, 0.15))
+    hist, bin_edges = np.histogram(np.array(D), bins = np.arange(0, 1.65, 0.15))
     hist = normalize_hist(hist)
 
     return (hist, bin_edges)
@@ -213,7 +216,7 @@ def calc_D2(verticesOne, verticesTwo):
             D.append(spatial.distance.cityblock([x1, y1, z1] , [ x2, y2, z2]))
     # Create histogram with 10 bins from 0 to 1.25 (as there where some values above 1)
 
-    hist, bin_edges = np.histogram(np.array(D), bins= np.arange(0, 2, 0.2))
+    hist, bin_edges = np.histogram(np.array(D), bins= np.arange(0, 2.2, 0.2))
     hist = normalize_hist(hist)
 
     return(hist, bin_edges)
@@ -238,11 +241,10 @@ def calc_D3(a, b, c):
 
 
 # Cube root of volume of tetrahedron formed by 4 random vertices
-def calc_D4(center, p1, p2, p3):
-    # TODO: change to four random points, sample new point everytime. 
-    p1_c = np.subtract(p1, center)
-    p2_c = np.subtract(p2, center)
-    p3_c = np.subtract(p3, center)
+def calc_D4(p1, p2, p3, p4):
+    p1_c = np.subtract(p1, p4)
+    p2_c = np.subtract(p2, p4)
+    p3_c = np.subtract(p3, p4)
 
     volume = np.abs(np.dot(p1_c, np.cross(p2_c, p3_c))) / 6
     return np.cbrt(volume)
