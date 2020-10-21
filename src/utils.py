@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import os
 import re
 import copy
+import math
 import trimesh as trm
 from tkinter import *
 from tkinter import ttk
@@ -211,8 +212,8 @@ def standardize(features):
     V, A, C, BB, D, E = [],[],[],[],[],[]
     for id, featuresList in features.items():
         V.append(featuresList["volume"])
-        A.append(featuresList['area'])
-        C.append(featuresList['compactness'])
+        A.append(featuresList["area"])
+        C.append(featuresList["compactness"])
         BB.append(featuresList["bbox_volume"])
         D.append(featuresList["diameter"])
         E.append(featuresList["eccentricity"])
@@ -220,12 +221,13 @@ def standardize(features):
     sdVals = save_standardization_vals(V, A, C, BB, D, E)
 
     for id, featuresList in features.items():
-        features[id]['volume'] = (featuresList["volume"]-sdVals["V_mean"])/sdVals["V_std"]
-        features[id]['area'] = (featuresList['area']-sdVals["A_mean"])/sdVals["A_std"]
-        features[id]['compactness'] = (featuresList['compactness']-sdVals["C_mean"])/sdVals["C_std"]
-        features[id]['bbox_volume'] = (featuresList["bbox_volume"]-sdVals["BB_mean"])/sdVals["BB_std"]
-        features[id]['diameter'] = (featuresList["diameter"] - sdVals["D_mean"])/sdVals["D_std"]
-        features[id]['eccentricity'] = (featuresList["eccentricity"] - sdVals["E_mean"])/sdVals["E_std"]
+        features[id]["volume"] = (featuresList["volume"]-sdVals["V_mean"])/sdVals["V_std"]
+        print('test standardisation', (featuresList["volume"]-sdVals["V_mean"])/sdVals["V_std"])
+        features[id]["area"] = (featuresList["area"]-sdVals["A_mean"])/sdVals["A_std"]
+        features[id]["compactness"] = (featuresList["compactness"]-sdVals["C_mean"])/sdVals["C_std"]
+        features[id]["bbox_volume"] = (featuresList["bbox_volume"]-sdVals["BB_mean"])/sdVals["BB_std"]
+        features[id]["diameter"] = (featuresList["diameter"] - sdVals["D_mean"])/sdVals["D_std"]
+        features[id]["eccentricity"] = (featuresList["eccentricity"] - sdVals["E_mean"])/sdVals["E_std"]
     
     np.save(SAVED_DATA + "features.npy", features)
     np.save(SAVED_DATA + "standardization_values.npy", sdVals)
@@ -252,3 +254,31 @@ def save_standardization_vals(V, A, C, BB, D, E):
     standardVals["E_std"] = np.std(E)
 
     return standardVals
+
+def calc_distance(features, shape_features, shape_id):
+    
+    similarities = {} # key: shape ID, value: distance
+    similarity = float(0)
+
+    for id, featuresList in features.items():
+        # Distance is the sqaure root of the sum of squared differences
+        dist_v = pow(featuresList["volume"] - shape_features.get("volume"), 2)
+        dist_a = pow(featuresList["area"] - shape_features.get("area"), 2)
+        dist_c = pow(featuresList["compactness"] - shape_features.get("compactness"), 2)
+        dist_bb = pow(featuresList["bbox_volume"] - shape_features.get("bbox_volume"), 2)
+        dist_d = pow(featuresList["diameter"] - shape_features.get("diameter"), 2)
+        dist_e = pow(featuresList["eccentricity"] - shape_features.get("eccentricity"), 2)
+
+        dist_A3 = np.sum(pow(np.subtract(featuresList["A3"][0], shape_features.get("A3")[0]), 2))
+        dist_D1 = np.sum(pow(np.subtract(featuresList["D1"][0], shape_features.get("D1")[0]), 2))
+        dist_D2 = np.sum(pow(np.subtract(featuresList["D2"][0], shape_features.get("D2")[0]), 2))
+        dist_D3 = np.sum(pow(np.subtract(featuresList["D3"][0], shape_features.get("D3")[0]), 2))
+        dist_D4 = np.sum(pow(np.subtract(featuresList["D4"][0], shape_features.get("D4")[0]), 2))
+
+        similarity = math.sqrt(dist_v + dist_a + dist_c + dist_bb + dist_d + dist_e + dist_A3 + dist_D1 + dist_D2 + dist_D3 + dist_D4)
+        similarities[id] = similarity
+    
+    print(similarities)
+
+    return similarities
+        

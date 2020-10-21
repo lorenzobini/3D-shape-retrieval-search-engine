@@ -9,7 +9,7 @@ from visualize import visualize
 from normalize import normalize_data, normalize_shape
 from dataLoader import import_dataset, import_normalised_data
 from features import *
-from utils import standardize
+from utils import standardize, calc_distance
 
 
 # from src.shape import Shape
@@ -21,7 +21,7 @@ from utils import standardize
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
 
 # TODO: to import the entire dataset remove the '0' and the redundant os.sep, REMOVE FOR FINAL PROGRAM
-DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep  + 'test' + os.sep #+ 'm0' + os.sep
+DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep  + 'test' + os.sep
 SAVED_DATA = DATA_PATH + 'cache' + os.sep
 NORMALIZED_DATA = SAVED_DATA + 'processed_data' + os.sep
 
@@ -106,13 +106,20 @@ def main():
             continue
 
     # Normalising shape
+    print('Normalising query shape . . . ')
     shape, new_n_verts, new_n_faces = normalize_shape(shape)
 
     # Calculating features for the shape
+    print('Calculating features for query shape . . .')
     shape_features = calculate_single_shape_metrics(shape)
-    
-    print({k: v for k, v in sorted(D.items(), key=lambda item: item[1])}) '''
 
+    # Calculate similarities
+    print('Calculate similarities . . .')
+    similarities = calc_distance(features, shape_features, shape.get_id())
+
+    print(sorted(similarities.values()))
+    
+    #print({k: v for k, v in sorted(similarities.items(), key=lambda item: item[1])})
 
 
 

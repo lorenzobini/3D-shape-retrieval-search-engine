@@ -17,7 +17,7 @@ SAVED_DATA = DATA_PATH + 'cache' + os.sep
 
 
 def calculate_metrics(shapes, last_batch = False):
-    print("Calculating all the object features...")
+    print("Calculating all the object features . . .")
 
     # If some features are present, load them
     if os.path.isfile(SAVED_DATA + "features.npy"):
@@ -131,17 +131,20 @@ def calc_distributions(shape):
     center  = shape.get_center()
 
     # Computing D1 -----------------------
+    print("Computing D1 distribution . . .")
     descriptors["D1"] = calc_D1(center, verticeList)
 
     verticeList = random.choices(list(shape.get_vertices()), k=1000)
 
     # Computing D2 -----------------------
+    print("Computing D2 distribution . . .")
     verticesOne = verticeList[:]
     verticesTwo = verticeList[500:]
 
     descriptors["D2"] = calc_D2(verticesOne, verticesTwo)
     verticeList = random.sample(list(shape.get_vertices()), k=195)
     # Computing A3, D3, D4 ---------------
+    print("Computing A3, D3, D4 distributions . . .")
     verticesOne = verticeList[:65]
     verticesTwo = verticeList[65:130]
     verticesThree = verticeList[130:]
