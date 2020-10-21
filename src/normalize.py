@@ -1,7 +1,7 @@
-# from src.utils import *
-# from src.Shape import Shape
-from shape import Shape
-from utils import *
+from src.utils import *
+from src.shape import Shape
+# from shape import Shape
+# from utils import *
 import open3d as o3d
 import trimesh
 import os

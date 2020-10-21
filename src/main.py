@@ -1,27 +1,25 @@
-from collections import defaultdict
 import os
 import numpy as np
-import matplotlib.pyplot as plt
-from scipy.spatial.distance import euclidean
 
-from shape import Shape
-from visualize import visualize
-from normalize import normalize_data, normalize_shape
-from dataLoader import import_dataset, import_normalised_data
-from features import *
-from utils import standardize, calc_distance
+# from shape import Shape
+# from visualize import visualize
+# from normalize import normalize_data, normalize_shape
+# from dataLoader import import_dataset, import_normalised_data
+# from features import *
+# from utils import standardize, calc_distance, pick_file
 
+from src.shape import Shape
+from src.visualize import visualize
+from src.normalize import normalize_data, normalize_shape
+from src.dataLoader import import_dataset, import_normalised_data
+from src.featureExtraction import *
+from src.utils import pick_file
 
-# from src.shape import Shape
-# from src.visualize import visualize
-# from src.normalize import normalize_data, normalize_shape
-# from src.dataLoader import import_dataset, import_normalised_data
-# from src.features import *
 
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
 
 # TODO: to import the entire dataset remove the '0' and the redundant os.sep, REMOVE FOR FINAL PROGRAM
-DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep  + 'test' + os.sep
+DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep # + 'test' + os.sep
 SAVED_DATA = DATA_PATH + 'cache' + os.sep
 NORMALIZED_DATA = SAVED_DATA + 'processed_data' + os.sep
 
@@ -39,9 +37,10 @@ def main():
         # Normalised shapes not present, importing and normalising dataset
         # Dividing import in batches
         batches = [f.path for f in os.scandir(DATA_SHAPES_PRICETON) if f.is_dir()]
-        batches = [DATA_SHAPES_PRICETON] # TODO: replace 0 with the batch to import for partial import, remove for final progr.
+        # batches = [0] # TODO: replace 0 with the batch to import for partial import, remove for final progr.
         for i, batch in enumerate(batches):
 
+            print("##### Importing Batch " + str(i+1) + " of " + str(len(batches)))
 
             shapes, labels = import_dataset(batch)
 
@@ -57,7 +56,7 @@ def main():
             # Step 3: Feature extraction -------------------------------
             shapes, features = calculate_metrics(shapes, False)
 
-            print("Progress:" + str((i/len(batches))*100) + "%")
+            print("Progress:" + str(int((i+1/len(batches))*100)) + "%")
         
 
 
@@ -75,20 +74,18 @@ def main():
         del tot_verts
         del features
 
-
-    features = np.load(SAVED_DATA + "features.npy", allow_pickle=True)
-    labels = np.load(SAVED_DATA + "labels.npy", allow_pickle=True)
-    # When saved numpy.load returns a numpy.ndarry so this handles that
+    # --------------------------------------------------------
+    # ONLINE WORKFLOW - QUERYING AND DISPLAYING RESULTS
+    # --------------------------------------------------------
 
     try:
+        features = np.load(SAVED_DATA + "features.npy", allow_pickle=True)
         features = features.item()
-        labels = labels.item()
     except:
         pass
-    
 
-    '''
     # Retrieving shape
+
     print("\n----------------------------------------------------")
     print("3D Shapes Search Engine")
     print("\n----------------------------------------------------")
@@ -106,6 +103,7 @@ def main():
             continue
 
     # Normalising shape
+
     print('Normalising query shape . . . ')
     shape, new_n_verts, new_n_faces = normalize_shape(shape)
 

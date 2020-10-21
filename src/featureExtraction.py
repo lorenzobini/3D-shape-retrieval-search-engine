@@ -4,12 +4,12 @@ from scipy import spatial
 
 
 # Other file imports
-from shape import Shape
-from boundingbox import BoundingBox
-from utils import *
-# from src.utils import *
-# from src.boundingbox import BoundingBox
-# from src.shape import Shape
+# from shape import Shape
+# from boundingbox import BoundingBox
+# from utils import *
+from src.utils import *
+from src.boundingbox import BoundingBox
+from src.shape import Shape
 
 
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
@@ -251,3 +251,53 @@ def calc_D4(p1, p2, p3, p4):
 
     volume = np.abs(np.dot(p1_c, np.cross(p2_c, p3_c))) / 6
     return np.cbrt(volume)
+
+
+# Standardize the non-histogram features
+def standardize(features):
+    V, A, C, BB, D, E = [], [], [], [], [], []
+    for id, featuresList in features.items():
+        V.append(featuresList["volume"])
+        A.append(featuresList["area"])
+        C.append(featuresList["compactness"])
+        BB.append(featuresList["bbox_volume"])
+        D.append(featuresList["diameter"])
+        E.append(featuresList["eccentricity"])
+
+    sdVals = save_standardization_vals(V, A, C, BB, D, E)
+
+    for id, featuresList in features.items():
+        features[id]["volume"] = (featuresList["volume"] - sdVals["V_mean"]) / sdVals["V_std"]
+        print('test standardisation', (featuresList["volume"] - sdVals["V_mean"]) / sdVals["V_std"])
+        features[id]["area"] = (featuresList["area"] - sdVals["A_mean"]) / sdVals["A_std"]
+        features[id]["compactness"] = (featuresList["compactness"] - sdVals["C_mean"]) / sdVals["C_std"]
+        features[id]["bbox_volume"] = (featuresList["bbox_volume"] - sdVals["BB_mean"]) / sdVals["BB_std"]
+        features[id]["diameter"] = (featuresList["diameter"] - sdVals["D_mean"]) / sdVals["D_std"]
+        features[id]["eccentricity"] = (featuresList["eccentricity"] - sdVals["E_mean"]) / sdVals["E_std"]
+
+    np.save(SAVED_DATA + "features.npy", features)
+    np.save(SAVED_DATA + "standardization_values.npy", sdVals)
+    return features
+
+
+def save_standardization_vals(V, A, C, BB, D, E):
+    standardVals = {}
+    standardVals["V_mean"] = np.mean(V)
+    standardVals["V_std"] = np.std(V)
+
+    standardVals["A_mean"] = np.mean(A)
+    standardVals["A_std"] = np.std(A)
+
+    standardVals["C_mean"] = np.mean(C)
+    standardVals["C_std"] = np.std(C)
+
+    standardVals["BB_mean"] = np.mean(BB)
+    standardVals["BB_std"] = np.std(BB)
+
+    standardVals["D_mean"] = np.mean(D)
+    standardVals["D_std"] = np.std(D)
+
+    standardVals["E_mean"] = np.mean(E)
+    standardVals["E_std"] = np.std(E)
+
+    return standardVals

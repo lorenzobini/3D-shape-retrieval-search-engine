@@ -9,11 +9,13 @@ from tkinter import *
 from tkinter import ttk
 from tkinter.filedialog import askopenfilename
 
-# from src.shape import Shape
-from shape import Shape
+from src.shape import Shape
+# from shape import Shape
 
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
 SAVED_DATA = DATA_PATH + 'cache' + os.sep
+
+
 # Parse a .off file
 def read_off(file):
     if 'OFF' != file.readline().strip():
@@ -135,7 +137,6 @@ def pick_file():
     return shape
 
 
-
 def calculate_box(vertices):
     
     x_coords = [x[0] for x in vertices]
@@ -207,78 +208,8 @@ def normalize_hist(hist):
         newhist.append(hi/hsum)
     return newhist
 
-# Standardize the non-histogram features 
-def standardize(features):
-    V, A, C, BB, D, E = [],[],[],[],[],[]
-    for id, featuresList in features.items():
-        V.append(featuresList["volume"])
-        A.append(featuresList["area"])
-        C.append(featuresList["compactness"])
-        BB.append(featuresList["bbox_volume"])
-        D.append(featuresList["diameter"])
-        E.append(featuresList["eccentricity"])
-    
-    sdVals = save_standardization_vals(V, A, C, BB, D, E)
 
-    for id, featuresList in features.items():
-        features[id]["volume"] = (featuresList["volume"]-sdVals["V_mean"])/sdVals["V_std"]
-        print('test standardisation', (featuresList["volume"]-sdVals["V_mean"])/sdVals["V_std"])
-        features[id]["area"] = (featuresList["area"]-sdVals["A_mean"])/sdVals["A_std"]
-        features[id]["compactness"] = (featuresList["compactness"]-sdVals["C_mean"])/sdVals["C_std"]
-        features[id]["bbox_volume"] = (featuresList["bbox_volume"]-sdVals["BB_mean"])/sdVals["BB_std"]
-        features[id]["diameter"] = (featuresList["diameter"] - sdVals["D_mean"])/sdVals["D_std"]
-        features[id]["eccentricity"] = (featuresList["eccentricity"] - sdVals["E_mean"])/sdVals["E_std"]
-    
-    np.save(SAVED_DATA + "features.npy", features)
-    np.save(SAVED_DATA + "standardization_values.npy", sdVals)
-    return features
 
-def save_standardization_vals(V, A, C, BB, D, E):
-    standardVals = {}
-    standardVals["V_mean"] = np.mean(V)
-    standardVals["V_std"] = np.std(V)
 
-    standardVals["A_mean"] = np.mean(A)
-    standardVals["A_std"] = np.std(A)
 
-    standardVals["C_mean"] = np.mean(C)
-    standardVals["C_std"] = np.std(C)
 
-    standardVals["BB_mean"] = np.mean(BB)
-    standardVals["BB_std"] = np.std(BB)
-
-    standardVals["D_mean"] = np.mean(D)
-    standardVals["D_std"] = np.std(D)
-
-    standardVals["E_mean"] = np.mean(E)
-    standardVals["E_std"] = np.std(E)
-
-    return standardVals
-
-def calc_distance(features, shape_features, shape_id):
-    
-    similarities = {} # key: shape ID, value: distance
-    similarity = float(0)
-
-    for id, featuresList in features.items():
-        # Distance is the sqaure root of the sum of squared differences
-        dist_v = pow(featuresList["volume"] - shape_features.get("volume"), 2)
-        dist_a = pow(featuresList["area"] - shape_features.get("area"), 2)
-        dist_c = pow(featuresList["compactness"] - shape_features.get("compactness"), 2)
-        dist_bb = pow(featuresList["bbox_volume"] - shape_features.get("bbox_volume"), 2)
-        dist_d = pow(featuresList["diameter"] - shape_features.get("diameter"), 2)
-        dist_e = pow(featuresList["eccentricity"] - shape_features.get("eccentricity"), 2)
-
-        dist_A3 = np.sum(pow(np.subtract(featuresList["A3"][0], shape_features.get("A3")[0]), 2))
-        dist_D1 = np.sum(pow(np.subtract(featuresList["D1"][0], shape_features.get("D1")[0]), 2))
-        dist_D2 = np.sum(pow(np.subtract(featuresList["D2"][0], shape_features.get("D2")[0]), 2))
-        dist_D3 = np.sum(pow(np.subtract(featuresList["D3"][0], shape_features.get("D3")[0]), 2))
-        dist_D4 = np.sum(pow(np.subtract(featuresList["D4"][0], shape_features.get("D4")[0]), 2))
-
-        similarity = math.sqrt(dist_v + dist_a + dist_c + dist_bb + dist_d + dist_e + dist_A3 + dist_D1 + dist_D2 + dist_D3 + dist_D4)
-        similarities[id] = similarity
-    
-    print(similarities)
-
-    return similarities
-        
