@@ -12,7 +12,7 @@ def k_means(shape_features, db_features):
     if not os.path.isfile(SAVED_DATA + 'clusters.ann'):
         ann = clustering(db_features)
     else:
-        ann = AnnoyIndex(db_features, 'euclidean')
+        ann = AnnoyIndex(11, 'euclidean') # 11 features
         ann.load(SAVED_DATA + 'clusters.ann')
 
     neighbors = ann.get_nns_by_item(shape_features, 10, include_distances=True)
@@ -21,9 +21,12 @@ def k_means(shape_features, db_features):
 
 
 def clustering(features):
-    ann = AnnoyIndex(features, 'euclidean')
+    ann = AnnoyIndex(11, 'euclidean') # 11 features
+    for id, featureList in features.items():
+        features_flatten = list(featureList.values())
+        ann.add_item(id, features_flatten)
 
-    ann.build(10)  # 10 trees
+    ann.build(42)  # 42 categories TODO: if we dont use coarse1, replace with new number of categories
     ann.save(SAVED_DATA + 'clusters.ann')
 
     return ann
@@ -34,8 +37,7 @@ def calc_distance(features, shape_features, shape_id):
     similarities = {} # key: shape ID, value: distance
     similarity = float(0)
 
-    for featuresList in features:
-        id = featuresList["id"]
+    for id, featuresList in features.items():
         # Distance is the sqaure root of the sum of squared differences
         dist_v = pow(featuresList["volume"] - shape_features.get("volume"), 2)
         dist_a = pow(featuresList["area"] - shape_features.get("area"), 2)

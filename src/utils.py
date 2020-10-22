@@ -110,7 +110,7 @@ def pick_file():
                                     title="Choose a file."
                                    )
     print(root.filename)
-
+    root.destroy()
     try:
         with open(root.filename, 'r') as UseFile:
             UseFile.read()

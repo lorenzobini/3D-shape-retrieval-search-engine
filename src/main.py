@@ -89,7 +89,7 @@ if __name__ == "__main__":
 
     print("\n----------------------------------------------------")
     print("3D Shapes Search Engine")
-    print("\n----------------------------------------------------")
+    print("----------------------------------------------------")
 
     while True:
         print("Select a shape to search for similar ones. Only OFF and PLY formats are supported. \n")
