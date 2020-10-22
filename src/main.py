@@ -13,6 +13,7 @@ from src.visualize import visualize
 from src.normalize import normalize_data, normalize_shape
 from src.dataLoader import import_dataset, import_normalised_data
 from src.featureExtraction import *
+from src.featureMatching import *
 from src.utils import pick_file
 
 
@@ -24,16 +25,16 @@ SAVED_DATA = DATA_PATH + 'cache' + os.sep
 NORMALIZED_DATA = SAVED_DATA + 'processed_data' + os.sep
 
 
-def main():
+if __name__ == "__main__":
     # --------------------------------------------------------
     # OFFLINE WORKFLOW - TO BE EXECUTED ONLY ONCE
     # --------------------------------------------------------
 
-    # Step 1: Importing data ---------------------------------
     FORCE_IMPORT = False
     shapes, labels, features = None, None, None
 
     if FORCE_IMPORT or len(os.listdir(NORMALIZED_DATA)) == 0:
+        # Step 1: Importing data -----------------------------------------
         # Normalised shapes not present, importing and normalising dataset
         # Dividing import in batches
         batches = [f.path for f in os.scandir(DATA_SHAPES_PRICETON) if f.is_dir()]
@@ -47,13 +48,13 @@ def main():
             # Visualising shapes
             # visualize(shapes, labels)
 
-            # Step 2: Normalising and remeshing shapes --------------
+            # Step 2: Normalising and remeshing shapes --------------------
             shapes, tot_verts, tot_faces = normalize_data(shapes)
 
             # Visualising normalised shapes
             # visualize(shapes, labels)
 
-            # Step 3: Feature extraction -------------------------------
+            # Step 3: Feature extraction ----------------------------------
             shapes, features = calculate_metrics(shapes, False)
 
             print("Progress:" + str(int((i+1/len(batches))*100)) + "%")
@@ -84,7 +85,7 @@ def main():
     except:
         pass
 
-    # Retrieving shape
+    # Step 4: Querying a shape ------------------------------------
 
     print("\n----------------------------------------------------")
     print("3D Shapes Search Engine")
@@ -115,10 +116,32 @@ def main():
     print('Calculate similarities . . .')
     similarities = calc_distance(features, shape_features, shape.get_id())
 
+    # TODO: sort and select the first 10 shapes, get the IDs and retrieve shape from memory to display
+
     print(sorted(similarities.values()))
     
     #print({k: v for k, v in sorted(similarities.items(), key=lambda item: item[1])})
 
+    # Step 5: Scalable querying -----------------------------------------------
+
+    # Calculate nearest neighbors via ANN
+    neighbors = k_means(shape_features, features)
+    n_shapes_features, n_distances = ([n[0] for n in neighbors], [n[1] for n in neighbors])
+    n_shapes_id = [n["id"] for n in n_shapes_features]
+
+    # Retrieving shapes from database
+    n_shapes = []
+    for id in n_shapes_id:
+        filename =NORMALIZED_DATA + "n" + str(id) + ".off"
+        file = open(filename, 'r')
+        verts, faces, n_verts, n_faces = read_off(file)
+        mesh = trm.load_mesh(filename)
+
+        n_shapes.append(Shape(verts, faces, mesh))
+
+    visualize(n_shapes, labels=[])
 
 
-main()
+
+
+
