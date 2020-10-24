@@ -4,8 +4,11 @@ import trimesh as trm
 from scipy.spatial import distance
 from scipy.stats import wasserstein_distance
 
-from shape import Shape
-from utils import read_off
+# from shape import Shape
+# from utils import read_off
+
+from src.shape import Shape
+from src.utils import read_off
 
 
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
