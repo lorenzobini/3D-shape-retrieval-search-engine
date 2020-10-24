@@ -66,7 +66,7 @@ if __name__ == "__main__":
         features = np.load(SAVED_DATA + "features.npy", allow_pickle=True)
         
         # Standarize numeric features
-        features = standardize(features.item())
+        features = standardize(features)
 
         # calculate the weights for the similarity measure
         calculate_weights(features)
@@ -91,11 +91,8 @@ if __name__ == "__main__":
     except:
         pass
 
-    # Step 4: Querying a shape ------------------------------------
 
-    
-    # Calculate weights if not done in the feature loading
-    # calculate_weights(features)
+    # Step 4: Querying a shape ------------------------------------
 
     # Retrieving shape
     print("\n----------------------------------------------------")
@@ -152,7 +149,7 @@ if __name__ == "__main__":
 
         n_shapes.append(Shape(verts, faces, mesh))
 
-    visualize(n_shapes, labels=[])
+    visualize(n_shapes)
 
 
 

@@ -1,9 +1,7 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import os
-import re
 import copy
-import math
+from collections.abc import Iterable
 import trimesh as trm
 from tkinter import *
 from tkinter import ttk
@@ -208,6 +206,28 @@ def normalize_hist(hist):
         newhist.append(hi/hsum)
     return newhist
 
+
+# Flattens irregular features array of non-iterables and lists
+def flatten_features_array(features):
+    flattened = []
+    flattened.append(features["volume"])
+    flattened.append(features["area"])
+    flattened.append(features["compactness"])
+    flattened.append(features["bbox_volume"])
+    flattened.append(features["diameter"])
+    flattened.append(features["eccentricity"])
+    for i in features["A3"][0]:
+        flattened.append(i)
+    for i in features["D1"][0]:
+        flattened.append(i)
+    for i in features["D2"][0]:
+        flattened.append(i)
+    for i in features["D3"][0]:
+        flattened.append(i)
+    for i in features["D4"][0]:
+        flattened.append(i)
+
+    return flattened
 
 
 

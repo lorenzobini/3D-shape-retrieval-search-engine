@@ -3,30 +3,51 @@ import numpy as np
 import os
 from annoy import AnnoyIndex
 
+# from utils import flatten
+from src.utils import flatten_features_array
+
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
 SAVED_DATA = DATA_PATH + 'cache' + os.sep
 
-# TODO: how to do the same with r-means?
 
-def k_means(shape_features, db_features):
+def k_means(shape_features, db_features, k=10):
     if not os.path.isfile(SAVED_DATA + 'clusters.ann'):
         ann = clustering(db_features)
     else:
-        ann = AnnoyIndex(11, 'euclidean') # 11 features
+        ann = AnnoyIndex(56, 'euclidean') # 16 features
         ann.load(SAVED_DATA + 'clusters.ann')
 
-    neighbors = ann.get_nns_by_item(shape_features, 10, include_distances=True)
+    shape_features_flat = flatten_features_array(shape_features)
+    neighbors = ann.get_nns_by_item(shape_features_flat, k, include_distances=True)
 
     return neighbors
 
 
+def r_means(shape_features, db_features, r=0.1):  # TODO: find a suitable range
+    if not os.path.isfile(SAVED_DATA + 'clusters.ann'):
+        ann = clustering(db_features)
+    else:
+        ann = AnnoyIndex(56, 'euclidean') # 16 features
+        ann.load(SAVED_DATA + 'clusters.ann')
+
+    neighbors = ann.get_nns_by_item(shape_features, 100, include_distances=True)
+
+    range_neighbors = []
+    for neighbor, distance in neighbors:
+        if distance < r:
+            range_neighbors.append((neighbor, distance))
+
+    return range_neighbors
+
+
 def clustering(features):
-    ann = AnnoyIndex(11, 'euclidean') # 11 features
+    ann = AnnoyIndex(56, 'euclidean') # 16 features
     for id, featureList in features.items():
-        features_flatten = list(featureList.values())
+        features_flatten = flatten_features_array(featureList)
+        ciao = len(features_flatten)
         ann.add_item(id, features_flatten)
 
-    ann.build(42)  # 42 categories TODO: if we dont use coarse1, replace with new number of categories
+    ann.build(42)  # 42 categories TODO: if we don't use coarse1, replace with new number of categories
     ann.save(SAVED_DATA + 'clusters.ann')
 
     return ann

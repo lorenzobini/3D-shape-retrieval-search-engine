@@ -268,7 +268,6 @@ def standardize(features):
 
     for id, featuresList in features.items():
         features[id]["volume"] = (featuresList["volume"] - sdVals["V_mean"]) / sdVals["V_std"]
-        print('test standardisation', (featuresList["volume"] - sdVals["V_mean"]) / sdVals["V_std"])
         features[id]["area"] = (featuresList["area"] - sdVals["A_mean"]) / sdVals["A_std"]
         features[id]["compactness"] = (featuresList["compactness"] - sdVals["C_mean"]) / sdVals["C_std"]
         features[id]["bbox_volume"] = (featuresList["bbox_volume"] - sdVals["BB_mean"]) / sdVals["BB_std"]
