@@ -1,12 +1,15 @@
 import os
 import numpy as np
+import matplotlib.pyplot as plt
 
 # from shape import Shape
 # from visualize import visualize
 # from normalize import normalize_data, normalize_shape
 # from dataLoader import import_dataset, import_normalised_data
-# from features import *
-# from utils import standardize, calc_distance, pick_file
+# from featureExtraction import *
+# from featureMatching import *
+# from utils import pick_file
+# from similarity import *
 
 from src.shape import Shape
 from src.visualize import visualize
@@ -15,12 +18,11 @@ from src.dataLoader import import_dataset, import_normalised_data
 from src.featureExtraction import *
 from src.featureMatching import *
 from src.utils import pick_file
+from src.similarity import *
 
 
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
-
-# TODO: to import the entire dataset remove the '0' and the redundant os.sep, REMOVE FOR FINAL PROGRAM
-DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep # + 'test' + os.sep
+DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep 
 SAVED_DATA = DATA_PATH + 'cache' + os.sep
 NORMALIZED_DATA = SAVED_DATA + 'processed_data' + os.sep
 
@@ -66,6 +68,10 @@ if __name__ == "__main__":
         # Standarize numeric features
         features = standardize(features.item())
 
+        # calculate the weights for the similarity measure
+        calculate_weights(features)
+        
+
         print("Import and normalisation processes completed.")
         print("Features extracted.")
 
@@ -87,6 +93,11 @@ if __name__ == "__main__":
 
     # Step 4: Querying a shape ------------------------------------
 
+    
+    # Calculate weights if not done in the feature loading
+    # calculate_weights(features)
+
+    # Retrieving shape
     print("\n----------------------------------------------------")
     print("3D Shapes Search Engine")
     print("----------------------------------------------------")
@@ -111,16 +122,18 @@ if __name__ == "__main__":
     # Calculating features for the shape
     print('Calculating features for query shape . . .')
     shape_features = calculate_single_shape_metrics(shape)
+    shape_features = standardize_single_shape(shape_features)
 
     # Calculate similarities
     print('Calculate similarities . . .')
     similarities = calc_distance(features, shape_features, shape.get_id())
 
-    # TODO: sort and select the first 10 shapes, get the IDs and retrieve shape from memory to display
-
     print(sorted(similarities.values()))
+    print("Retrieving and showing similar shapes")
+    shapes = load_similar(similarities, shape)
     
-    #print({k: v for k, v in sorted(similarities.items(), key=lambda item: item[1])})
+    visualize(shapes)
+    
 
     # Step 5: Scalable querying -----------------------------------------------
 

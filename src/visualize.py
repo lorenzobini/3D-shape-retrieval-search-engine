@@ -48,7 +48,7 @@ def InitGL(width, height):
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST) # Really Nice Perspective Calculations 
 
 
-def visualize(shapes_list, labels):
+def visualize(shapes_list):
     global xrot, yrot, shapes, vertices, indices
 
     # create window to render 3d mesh

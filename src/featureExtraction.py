@@ -142,12 +142,11 @@ def calc_distributions(shape):
     verticesTwo = verticeList[500:]
 
     descriptors["D2"] = calc_D2(verticesOne, verticesTwo)
-    verticeList = random.sample(list(shape.get_vertices()), k=195)
+    verticeList = random.sample(list(shape.get_vertices()), k=150)
     # Computing A3, D3, D4 ---------------
-    print("Computing A3, D3, D4 distributions . . .")
-    verticesOne = verticeList[:65]
-    verticesTwo = verticeList[65:130]
-    verticesThree = verticeList[130:]
+    verticesOne = verticeList[:50]
+    verticesTwo = verticeList[50:100]
+    verticesThree = verticeList[100:]
 
     A3 = []
     D3 = []
@@ -251,6 +250,7 @@ def calc_D4(p1, p2, p3, p4):
 
     volume = np.abs(np.dot(p1_c, np.cross(p2_c, p3_c))) / 6
     return np.cbrt(volume)
+
 
 
 # Standardize the non-histogram features
