@@ -134,10 +134,26 @@ if __name__ == "__main__":
 
     # Step 5: Scalable querying -----------------------------------------------
 
-    # Calculate nearest neighbors via ANN
-    neighbors = k_means(shape_features, features)
-    n_shapes_features, n_distances = ([n[0] for n in neighbors], [n[1] for n in neighbors])
-    n_shapes_id = [n["id"] for n in n_shapes_features]
+    # Calculate nearest neighbors via ANN and K-Nearest Neighbors
+    neighbors = k_neighbors(shape_features, features)
+    n_shapes_id, n_distances = neighbors[0][1:], neighbors[1][1:]
+
+    # Retrieving shapes from database
+    n_shapes = []
+    for id in n_shapes_id:
+        filename =NORMALIZED_DATA + "n" + str(id) + ".off"
+        file = open(filename, 'r')
+        verts, faces, n_verts, n_faces = read_off(file)
+        mesh = trm.load_mesh(filename)
+
+        n_shapes.append(Shape(verts, faces, mesh))
+
+    visualize(n_shapes)
+
+
+    # Calculate nearest neighbors via ANN and R-Nearest Neighbors
+    neighbors = r_neighbors(shape_features, features)
+    n_shapes_id, n_distances = neighbors[0][1:], neighbors[1][1:]
 
     # Retrieving shapes from database
     n_shapes = []
