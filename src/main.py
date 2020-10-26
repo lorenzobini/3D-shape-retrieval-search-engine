@@ -2,23 +2,23 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-# from shape import Shape
-# from visualize import visualize
-# from normalize import normalize_data, normalize_shape
-# from dataLoader import import_dataset, import_normalised_data
-# from featureExtraction import *
-# from featureMatching import *
-# from utils import pick_file
+from shape import Shape
+from visualize import visualize
+from normalize import normalize_data, normalize_shape
+from dataLoader import import_dataset, import_normalised_data
+from featureExtraction import *
+from featureMatching import *
+from utils import pick_file
 # from similarity import *
 
-from src.shape import Shape
-from src.visualize import visualize
-from src.normalize import normalize_data, normalize_shape
-from src.dataLoader import import_dataset, import_normalised_data
-from src.featureExtraction import *
-from src.featureMatching import *
-from src.utils import pick_file
-from src.similarity import *
+# from src.shape import Shape
+# from src.visualize import visualize
+# from src.normalize import normalize_data, normalize_shape
+# from src.dataLoader import import_dataset, import_normalised_data
+# from src.featureExtraction import *
+# from src.featureMatching import *
+# from src.utils import pick_file
+# from src.similarity import *
 
 
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
@@ -125,7 +125,6 @@ if __name__ == "__main__":
     print('Calculate similarities . . .')
     similarities = calc_distance(features, shape_features, shape.get_id())
 
-    print(sorted(similarities.values()))
     print("Retrieving and showing similar shapes")
     shapes = load_similar(similarities, shape)
     

@@ -4,13 +4,13 @@ import trimesh as trm
 import os
 
 # Imports from other files,
-from src.shape import Shape
-from src.normalize import normalize_data
-from src.utils import *
+# from src.shape import Shape
+# from src.normalize import normalize_data
+# from src.utils import *
 
-# from shape import Shape
-# from normalize import normalize_data
-# from utils import *
+from shape import Shape
+from normalize import normalize_data
+from utils import *
 
 
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep

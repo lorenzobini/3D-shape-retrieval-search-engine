@@ -1,10 +1,12 @@
-from src.utils import *
-from src.shape import Shape
-# from shape import Shape
-# from utils import *
 import open3d as o3d
 import trimesh
 import os
+
+# from src.utils import *
+# from src.shape import Shape
+from shape import Shape
+from utils import *
+
 
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
 DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep + '0' + os.sep

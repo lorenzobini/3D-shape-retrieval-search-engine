@@ -4,12 +4,12 @@ from scipy import spatial
 
 
 # Other file imports
-# from shape import Shape
-# from boundingbox import BoundingBox
-# from utils import *
-from src.utils import *
-from src.boundingbox import BoundingBox
-from src.shape import Shape
+from shape import Shape
+from boundingbox import BoundingBox
+from utils import *
+# from src.utils import *
+# from src.boundingbox import BoundingBox
+# from src.shape import Shape
 
 
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
