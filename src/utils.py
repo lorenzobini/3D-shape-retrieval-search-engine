@@ -7,8 +7,8 @@ from tkinter import *
 from tkinter import ttk
 from tkinter.filedialog import askopenfilename
 
-# from src.shape import Shape
-from shape import Shape
+from src.shape import Shape
+# from shape import Shape
 
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
 SAVED_DATA = DATA_PATH + 'cache' + os.sep

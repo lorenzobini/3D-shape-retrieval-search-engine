@@ -2,10 +2,10 @@ import open3d as o3d
 import trimesh
 import os
 
-# from src.utils import *
-# from src.shape import Shape
-from shape import Shape
-from utils import *
+from src.utils import *
+from src.shape import Shape
+# from shape import Shape
+# from utils import *
 
 
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep

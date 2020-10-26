@@ -2,23 +2,21 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-from shape import Shape
-from visualize import visualize
-from normalize import normalize_data, normalize_shape
-from dataLoader import import_dataset, import_normalised_data
-from featureExtraction import *
-from featureMatching import *
-from utils import pick_file
-# from similarity import *
+# from shape import Shape
+# from visualize import visualize
+# from normalize import normalize_data, normalize_shape
+# from dataLoader import import_dataset, import_normalised_data
+# from featureExtraction import *
+# from featureMatching import *
+# from utils import pick_file
 
-# from src.shape import Shape
-# from src.visualize import visualize
-# from src.normalize import normalize_data, normalize_shape
-# from src.dataLoader import import_dataset, import_normalised_data
-# from src.featureExtraction import *
-# from src.featureMatching import *
-# from src.utils import pick_file
-# from src.similarity import *
+from src.shape import Shape
+from src.visualize import visualize
+from src.normalize import normalize_data, normalize_shape
+from src.dataLoader import import_dataset, import_normalised_data
+from src.featureExtraction import *
+from src.featureMatching import *
+from src.utils import pick_file
 
 
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
@@ -133,17 +131,20 @@ if __name__ == "__main__":
 
     # Step 5: Scalable querying -----------------------------------------------
 
+
     # Calculate nearest neighbors via ANN and K-Nearest Neighbors
     neighbors = k_neighbors(shape_features, features)
     n_shapes_id, n_distances = neighbors[0][1:], neighbors[1][1:]
 
     # Retrieving shapes from database
-    n_shapes = []
+    n_shapes = [shape]
     for id in n_shapes_id:
         filename =NORMALIZED_DATA + "n" + str(id) + ".off"
         file = open(filename, 'r')
         verts, faces, n_verts, n_faces = read_off(file)
         mesh = trm.load_mesh(filename)
+
+        shape.set_id(id)
 
         n_shapes.append(Shape(verts, faces, mesh))
 
@@ -155,7 +156,7 @@ if __name__ == "__main__":
     n_shapes_id, n_distances = neighbors[0][1:], neighbors[1][1:]
 
     # Retrieving shapes from database
-    n_shapes = []
+    n_shapes = [shape]
     for id in n_shapes_id:
         filename =NORMALIZED_DATA + "n" + str(id) + ".off"
         file = open(filename, 'r')

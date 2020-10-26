@@ -6,9 +6,10 @@ import trimesh as trm
 from scipy.spatial import distance
 from scipy.stats import wasserstein_distance
 
-from shape import Shape
-from utils import flatten_features_array, read_off
-# from src.utils import flatten_features_array
+# from shape import Shape
+# from utils import flatten_features_array, read_off
+from src.utils import flatten_features_array, read_off
+from src.shape import Shape
 
 DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
 SAVED_DATA = DATA_PATH + 'cache' + os.sep
@@ -122,8 +123,17 @@ def find(name, path):
         if name in files:
             return os.path.join(root, name)
 
-def k_neighbors(shape_features, db_features, k=11):
+
+def clustering(db_features):
     ann = AnnoyIndex(56, 'euclidean')  # 16 features
+    for id, featureList in db_features.items():
+        features_flatten = flatten_features_array(featureList)
+        ann.add_item(id, features_flatten)
+
+    return ann
+
+def k_neighbors(shape_features, db_features, k=11):
+    ann = AnnoyIndex(56, 'euclidean')  # 56 features
     for id, featureList in db_features.items():
         features_flatten = flatten_features_array(featureList)
         ann.add_item(id, features_flatten)
@@ -141,8 +151,8 @@ def k_neighbors(shape_features, db_features, k=11):
     return neighbors
 
 
-def r_neighbors(shape_features, db_features, r=0.25):  # TODO: find a suitable range
-    ann = AnnoyIndex(56, 'euclidean')  # 16 features
+def r_neighbors(shape_features, db_features, r=0.5):
+    ann = AnnoyIndex(56, 'euclidean')  # 56 features
     for id, featureList in db_features.items():
         features_flatten = flatten_features_array(featureList)
         ann.add_item(id, features_flatten)
@@ -161,10 +171,9 @@ def r_neighbors(shape_features, db_features, r=0.25):  # TODO: find a suitable r
     range_neighbors = ([], [])
     for i, distance in enumerate(neighbors[1]):
         if distance < r:
-            print(neighbors[0][i], distance)
             range_neighbors[0].append(neighbors[0][i])
             range_neighbors[1].append(distance)
 
-    print(range_neighbors)
+
     return range_neighbors
 
