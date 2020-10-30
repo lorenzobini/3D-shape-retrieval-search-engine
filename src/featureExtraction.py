@@ -7,21 +7,21 @@ from scipy import spatial
 # from shape import Shape
 # from boundingbox import BoundingBox
 # from utils import *
+# from settings import Settings
 from src.utils import *
 from src.boundingbox import BoundingBox
 from src.shape import Shape
+from src.settings import Settings
 
-
-DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
-SAVED_DATA = DATA_PATH + 'cache' + os.sep
+s = Settings()
 
 
 def calculate_metrics(shapes, last_batch = False):
     print("Calculating all the object features . . .")
 
     # If some features are present, load them
-    if os.path.isfile(SAVED_DATA + "features.npy"):
-        features = np.load(SAVED_DATA + "features.npy", allow_pickle=True)
+    if os.path.isfile(s.SAVED_DATA + "features.npy"):
+        features = np.load(s.SAVED_DATA + "features.npy", allow_pickle=True)
         try:
             features = features.item()
         except:
@@ -39,7 +39,7 @@ def calculate_metrics(shapes, last_batch = False):
     print("Saving the features.")
 
     # Saving features to disk
-    np.save(SAVED_DATA + "features.npy", features)
+    np.save(s.SAVED_DATA + "features.npy", features)
 
     return shapes, features
 
@@ -127,7 +127,7 @@ def eccentricity(shape):
 def calc_distributions(shape):
     descriptors = {}
 
-    verticeList = random.choices(list(shape.get_vertices()), k=5000)  # select 1000 random vertices
+    verticeList = random.choices(list(shape.get_vertices()), k=5000)
     center  = shape.get_center()
 
     # Computing D1 -----------------------
@@ -274,8 +274,8 @@ def standardize(features):
         features[id]["diameter"] = (featuresList["diameter"] - sdVals["D_mean"]) / sdVals["D_std"]
         features[id]["eccentricity"] = (featuresList["eccentricity"] - sdVals["E_mean"]) / sdVals["E_std"]
 
-    np.save(SAVED_DATA + "features.npy", features)
-    np.save(SAVED_DATA + "standardization_values.npy", sdVals)
+    np.save(s.SAVED_DATA + "features.npy", features)
+    np.save(s.SAVED_DATA + "standardization_values.npy", sdVals)
     return features
 
 

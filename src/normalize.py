@@ -4,16 +4,12 @@ import os
 
 from src.utils import *
 from src.shape import Shape
+from src.settings import Settings
 # from shape import Shape
 # from utils import *
+# from settings import Settings
 
-
-DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
-DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep + '0' + os.sep
-DATA_CLASSIFICATION_PRINCETON = DATA_PATH + 'benchmark' + os.sep + 'classification' + os.sep + 'v1' + os.sep + 'coarse1' + os.sep
-
-SAVED_DATA = DATA_PATH + 'cache' + os.sep
-NORMALIZED_DATA = SAVED_DATA + 'processed_data' + os.sep
+s = Settings()
 
 
 # Normalizes the data based on Module 4 of the INFOMR course
@@ -34,8 +30,8 @@ def normalize_data(shapes):
 
     # Saving normalised shapes and respective off files to disk
     for shape in remove_meshes(shapes):
-        write_off(NORMALIZED_DATA, shape)
-        np.save(NORMALIZED_DATA + 'n' + str(shape.get_id()) + '.npy', [shape])
+        write_off(s.NORMALIZED_DATA, shape)
+        np.save(s.NORMALIZED_DATA + 'n' + str(shape.get_id()) + '.npy', [shape])
    
     print("Normalised shapes saved.")
 
@@ -44,11 +40,8 @@ def normalize_data(shapes):
 
 # Normalizes single shape
 def normalize_shape(shape: Shape):
-    avg_verts = 2000
-    q1_verts = 1000
-    q3_verts = 3000
 
-    new_mesh, new_n_verts, new_n_faces = remeshing(shape.get_mesh(), avg_verts, q1_verts, q3_verts)
+    new_mesh, new_n_verts, new_n_faces = remeshing(shape.get_mesh())
                 
     # Translate to center
     new_mesh.vertices -= new_mesh.center_mass
@@ -68,7 +61,7 @@ def normalize_shape(shape: Shape):
 
     # Updating shape
     shape.set_vertices(np.asarray(new_mesh.vertices))
-    faces = np.insert(np.array(new_mesh.faces), 0, np.full(len(new_mesh.faces),3), axis=1) # makes sure that the right format is handled 
+    faces = np.insert(np.array(new_mesh.faces), 0, np.full(len(new_mesh.faces), 3), axis=1) # makes sure that the right format is handled
     shape.set_faces(faces.tolist())
     shape.set_center(tuple(new_mesh.center_mass))
     shape.set_bounding_box(x_min, y_min, z_min, x_max, y_max, z_max)
@@ -78,7 +71,7 @@ def normalize_shape(shape: Shape):
 
 
 # Remeshes shapes
-def remeshing(mesh, avg_verts, q1_verts, q3_verts):
+def remeshing(mesh, avg_verts=s.AVG_VERTS, q1_verts=s.Q1_VERTS, q3_verts=s.Q3_VERTS):
     v = o3d.utility.Vector3dVector(np.asarray(mesh.vertices))
     f = o3d.utility.Vector3iVector(np.asarray(mesh.faces))
     mesh = o3d.geometry.TriangleMesh(vertices = v, triangles = f)

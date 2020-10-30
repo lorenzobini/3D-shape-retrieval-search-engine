@@ -17,12 +17,10 @@ from src.dataLoader import import_dataset, import_normalised_data
 from src.featureExtraction import *
 from src.featureMatching import *
 from src.utils import pick_file
+from src.settings import Settings
 
 
-DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
-DATA_SHAPES_PRICETON = DATA_PATH + 'benchmark' + os.sep + 'db' + os.sep 
-SAVED_DATA = DATA_PATH + 'cache' + os.sep
-NORMALIZED_DATA = SAVED_DATA + 'processed_data' + os.sep
+s = Settings()
 
 
 if __name__ == "__main__":
@@ -30,15 +28,13 @@ if __name__ == "__main__":
     # OFFLINE WORKFLOW - TO BE EXECUTED ONLY ONCE
     # --------------------------------------------------------
 
-    FORCE_IMPORT = False
     shapes, labels, features = None, None, None
 
-    if FORCE_IMPORT or len(os.listdir(NORMALIZED_DATA)) == 0:
+    if s.FORCE_IMPORT or len(os.listdir(s.NORMALIZED_DATA)) == 0:
         # Step 1: Importing data -----------------------------------------
         # Normalised shapes not present, importing and normalising dataset
         # Dividing import in batches
-        batches = [f.path for f in os.scandir(DATA_SHAPES_PRICETON) if f.is_dir()]
-        # batches = [0] # TODO: replace 0 with the batch to import for partial import, remove for final progr.
+        batches = [f.path for f in os.scandir(s.DATA_SHAPES_PRICETON) if f.is_dir()]
         for i, batch in enumerate(batches):
 
             print("##### Importing Batch " + str(i+1) + " of " + str(len(batches)))
@@ -46,22 +42,25 @@ if __name__ == "__main__":
             shapes, labels = import_dataset(batch)
 
             # Visualising shapes
-            # visualize(shapes, labels)
+            if s.DISPLAY_BATCH_BN:
+                visualize(shapes, labels)
 
             # Step 2: Normalising and remeshing shapes --------------------
             shapes, tot_verts, tot_faces = normalize_data(shapes)
 
             # Visualising normalised shapes
-            # visualize(shapes, labels)
+            if s.DISPLAY_BATCH_AN:
+                visualize(shapes, labels)
 
             # Step 3: Feature extraction ----------------------------------
             shapes, features = calculate_metrics(shapes, False)
 
-            print("Progress:" + str(int((i+1/len(batches))*100)) + "%")
+            if s.DISPLAY_PROGRESS:
+                print("Progress:" + str(int((i+1/len(batches))*100)) + "%")
         
 
 
-        features = np.load(SAVED_DATA + "features.npy", allow_pickle=True)
+        features = np.load(s.SAVED_DATA + "features.npy", allow_pickle=True)
         
         # Standarize numeric features
         features = standardize(features)
@@ -84,7 +83,7 @@ if __name__ == "__main__":
     # --------------------------------------------------------
 
     try:
-        features = np.load(SAVED_DATA + "features.npy", allow_pickle=True)
+        features = np.load(s.SAVED_DATA + "features.npy", allow_pickle=True)
         features = features.item()
     except:
         pass
@@ -97,77 +96,83 @@ if __name__ == "__main__":
     print("3D Shapes Search Engine")
     print("----------------------------------------------------")
 
-    while True:
-        print("Select a shape to search for similar ones. Only OFF and PLY formats are supported. \n")
-        try:
-            shape = pick_file()
+    while True: # Query loop, see settings.INFINITE_QUERY_LOOP for info
+
+        while True:
+            print("Select a shape to search for similar ones. Only OFF and PLY formats are supported. \n")
+            try:
+                shape = pick_file()
+                break
+            except FileNotFoundError:
+                print("File not found. Try again.\n")
+                continue
+            except FileExistsError:
+                print("Format not supported. Please select an OFF or PLY file.\n")
+                continue
+
+        # Normalising shape
+
+        print('Normalising query shape . . . ')
+        shape, new_n_verts, new_n_faces = normalize_shape(shape)
+
+        # Calculating features for the shape
+        print('Calculating features for query shape . . .')
+        shape_features = calculate_single_shape_metrics(shape)
+        shape_features = standardize_single_shape(shape_features)
+
+        if s.USE_CUSTOM_DISTANCE:
+            # Calculate similarities
+            print('Calculate similarities . . .')
+            similarities = calc_distance(features, shape_features, shape.get_id())
+
+            print("Retrieving and showing similar shapes")
+            shapes = load_similar(similarities, shape)
+
+            visualize(shapes)
+
+
+        # Step 5: Scalable querying -----------------------------------------------
+
+        if s.USE_KNN:
+            # Calculate nearest neighbors via ANN and K-Nearest Neighbors
+            neighbors = k_neighbors(shape_features, features)
+            n_shapes_id, n_distances = neighbors[0][1:], neighbors[1][1:]
+
+            # Retrieving shapes from database
+            n_shapes = [shape]
+            for id in n_shapes_id:
+                filename = s.NORMALIZED_DATA + "n" + str(id) + ".off"
+                file = open(filename, 'r')
+                verts, faces, n_verts, n_faces = read_off(file)
+                mesh = trm.load_mesh(filename)
+
+                shape.set_id(id)
+
+                n_shapes.append(Shape(verts, faces, mesh))
+
+            visualize(n_shapes)
+
+        if s.USE_RNN:
+            # Calculate nearest neighbors via ANN and R-Nearest Neighbors
+            neighbors = r_neighbors(shape_features, features)
+            n_shapes_id, n_distances = neighbors[0][1:], neighbors[1][1:]
+
+            # Retrieving shapes from database
+            n_shapes = [shape]
+            for id in n_shapes_id:
+                filename = s.NORMALIZED_DATA + "n" + str(id) + ".off"
+                file = open(filename, 'r')
+                verts, faces, n_verts, n_faces = read_off(file)
+                mesh = trm.load_mesh(filename)
+
+                n_shapes.append(Shape(verts, faces, mesh))
+
+            visualize(n_shapes)
+
+        if s.INFINITE_QUERY_LOOP:
+            continue
+        else:
             break
-        except FileNotFoundError:
-            print("File not found. Try again.\n")
-            continue
-        except FileExistsError:
-            print("Format not supported. Please select an OFF or PLY file.\n")
-            continue
-
-    # Normalising shape
-
-    print('Normalising query shape . . . ')
-    shape, new_n_verts, new_n_faces = normalize_shape(shape)
-
-    # Calculating features for the shape
-    print('Calculating features for query shape . . .')
-    shape_features = calculate_single_shape_metrics(shape)
-    shape_features = standardize_single_shape(shape_features)
-
-    # Calculate similarities
-    print('Calculate similarities . . .')
-    similarities = calc_distance(features, shape_features, shape.get_id())
-
-    print("Retrieving and showing similar shapes")
-    shapes = load_similar(similarities, shape)
-    
-    visualize(shapes)
-    
-
-    # Step 5: Scalable querying -----------------------------------------------
-
-
-    # Calculate nearest neighbors via ANN and K-Nearest Neighbors
-    neighbors = k_neighbors(shape_features, features)
-    n_shapes_id, n_distances = neighbors[0][1:], neighbors[1][1:]
-
-    # Retrieving shapes from database
-    n_shapes = [shape]
-    for id in n_shapes_id:
-        filename =NORMALIZED_DATA + "n" + str(id) + ".off"
-        file = open(filename, 'r')
-        verts, faces, n_verts, n_faces = read_off(file)
-        mesh = trm.load_mesh(filename)
-
-        shape.set_id(id)
-
-        n_shapes.append(Shape(verts, faces, mesh))
-
-    visualize(n_shapes)
-
-
-    # Calculate nearest neighbors via ANN and R-Nearest Neighbors
-    neighbors = r_neighbors(shape_features, features)
-    n_shapes_id, n_distances = neighbors[0][1:], neighbors[1][1:]
-
-    # Retrieving shapes from database
-    n_shapes = [shape]
-    for id in n_shapes_id:
-        filename =NORMALIZED_DATA + "n" + str(id) + ".off"
-        file = open(filename, 'r')
-        verts, faces, n_verts, n_faces = read_off(file)
-        mesh = trm.load_mesh(filename)
-
-        n_shapes.append(Shape(verts, faces, mesh))
-
-    visualize(n_shapes)
-
-
 
 
 

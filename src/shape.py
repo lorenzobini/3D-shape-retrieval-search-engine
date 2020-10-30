@@ -1,7 +1,7 @@
 # from open3d import geometry
 from trimesh import base
-# from src.boundingbox import BoundingBox
-from boundingbox import BoundingBox
+from src.boundingbox import BoundingBox
+# from boundingbox import BoundingBox
 
 
 class Shape:
@@ -84,13 +84,9 @@ class Shape:
     def get_mesh(self) -> base.Trimesh:
         return self.mesh
 
-
     def delete_mesh(self):
         self.mesh = None
 
-    def is_watertight(self) -> base.Trimesh.is_watertight:
-        return self.mesh # return boolean
-    
     # Counts
 
     def get_n_faces(self) -> int:
@@ -139,5 +135,5 @@ class Shape:
     def get_class(self):
         return self.class_id, self.class_name
 
-    # TODO: eventually implement getter and setter for x y z axis
+
 

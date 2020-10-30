@@ -8,11 +8,13 @@ from scipy.stats import wasserstein_distance
 
 # from shape import Shape
 # from utils import flatten_features_array, read_off
+# from settings import Settings
 from src.utils import flatten_features_array, read_off
 from src.shape import Shape
+from src.settings import Settings
 
-DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
-SAVED_DATA = DATA_PATH + 'cache' + os.sep
+s = Settings()
+
 
 def calculate_weights(features):
     d_v, d_a, d_c, d_bb, d_d, d_e, d_a3, d_d1, d_d2, d_d3, d_d4 = [],[],[],[],[],[],[],[],[],[],[]
@@ -51,13 +53,13 @@ def calculate_weights(features):
 
     print(weights)
 
-    np.save(SAVED_DATA + "distance_weights.npy", weights)  
+    np.save(s.SAVED_DATA + "distance_weights.npy", weights)
     return    
 
 
         
 def standardize_single_shape(shape_features):
-    sdVals = np.load(SAVED_DATA + "standardization_values.npy", allow_pickle=True).item()
+    sdVals = np.load(s.SAVED_DATA + "standardization_values.npy", allow_pickle=True).item()
     shape_features["volume"] = (shape_features["volume"]-sdVals["V_mean"])/sdVals["V_std"]
     shape_features["area"] = (shape_features["area"]-sdVals["A_mean"])/sdVals["A_std"]
     shape_features["compactness"] = (shape_features["compactness"]-sdVals["C_mean"])/sdVals["C_std"]
@@ -70,7 +72,7 @@ def standardize_single_shape(shape_features):
 def calc_distance(features, shape_features, shape_id):
     similarities = {} # key: shape ID, value: distance
     similarity = float(0)
-    weights = np.load(SAVED_DATA + "distance_weights.npy", allow_pickle=True).item()
+    weights = np.load(s.SAVED_DATA + "distance_weights.npy", allow_pickle=True).item()
     for id, featuresList in features.items():
         # Distance is the sqaure root of the sum of squared differences
         dist_v = distance.euclidean(featuresList['volume'], shape_features.get('volume'))
@@ -93,6 +95,7 @@ def calc_distance(features, shape_features, shape_id):
     
 
     return similarities
+
 
 def load_similar(similarities, shape):
     DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep + 'cache' + os.sep + 'processed_data' + os.sep
@@ -132,7 +135,7 @@ def clustering(db_features):
 
     return ann
 
-def k_neighbors(shape_features, db_features, k=11):
+def k_neighbors(shape_features, db_features, k=s.KNN_SIZE):
     ann = AnnoyIndex(56, 'euclidean')  # 56 features
     for id, featureList in db_features.items():
         features_flatten = flatten_features_array(featureList)
@@ -144,14 +147,14 @@ def k_neighbors(shape_features, db_features, k=11):
     shape_id = ann.get_n_items()
     ann.add_item(shape_id, shape_features_flat)
 
-    ann.build(42)  # 42 categories TODO: if we don't use coarse1, replace with new number of categories
+    ann.build(s.CATEGORIES)
 
     neighbors = ann.get_nns_by_item(shape_id, k, include_distances=True)
 
     return neighbors
 
 
-def r_neighbors(shape_features, db_features, r=0.5):
+def r_neighbors(shape_features, db_features, r=s.RNN_RANGE):
     ann = AnnoyIndex(56, 'euclidean')  # 56 features
     for id, featureList in db_features.items():
         features_flatten = flatten_features_array(featureList)
@@ -163,9 +166,9 @@ def r_neighbors(shape_features, db_features, r=0.5):
     shape_id = ann.get_n_items()
     ann.add_item(shape_id, shape_features_flat)
 
-    ann.build(42)  # 42 categories TODO: if we don't use coarse1, replace with new number of categories
+    ann.build(s.CATEGORIES)
 
-    neighbors = ann.get_nns_by_item(shape_id, 100, include_distances=True)
+    neighbors = ann.get_nns_by_item(shape_id, 200, include_distances=True)
 
 
     range_neighbors = ([], [])

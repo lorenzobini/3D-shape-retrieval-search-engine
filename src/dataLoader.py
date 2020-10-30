@@ -7,19 +7,14 @@ import os
 from src.shape import Shape
 from src.normalize import normalize_data
 from src.utils import *
+from src.settings import Settings
 
 # from shape import Shape
 # from normalize import normalize_data
 # from utils import *
+# from settings import Settings
 
-
-DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
-
-
-DATA_CLASSIFICATION_PRINCETON = DATA_PATH + 'benchmark' + os.sep + 'classification' + os.sep + 'v1' + os.sep + 'coarse1' + os.sep
-
-SAVED_DATA = DATA_PATH + 'cache' + os.sep
-NORMALIZED_DATA = SAVED_DATA + 'processed_data' + os.sep
+s = Settings()
 
 
 def import_dataset(BATCH_PATH) -> ([Shape], defaultdict):
@@ -31,9 +26,9 @@ def import_dataset(BATCH_PATH) -> ([Shape], defaultdict):
     tot_verts = []
     tot_faces = []
 
-    if os.path.isfile(SAVED_DATA + "labels.npy"):
+    if os.path.isfile(s.SAVED_DATA + "labels.npy"):
         # Retrieving labels
-        labels = np.load(SAVED_DATA + "labels.npy", allow_pickle=True)
+        labels = np.load(s.SAVED_DATA + "labels.npy", allow_pickle=True)
         # When saved numpy.load returns a numpy.ndarry so this handles that
         try:
             labels = labels.item()
@@ -43,7 +38,7 @@ def import_dataset(BATCH_PATH) -> ([Shape], defaultdict):
         # Importing labels
         temp1 = {}
         class_list = []
-        for dirName, subdirList, objList in os.walk(DATA_CLASSIFICATION_PRINCETON):
+        for dirName, subdirList, objList in os.walk(s.DATA_CLASSIFICATION_PRINCETON):
             for obj in objList:
                 if obj.endswith('.cla'):
                     file = open(dirName + '\\' + obj, "r")
@@ -53,7 +48,7 @@ def import_dataset(BATCH_PATH) -> ([Shape], defaultdict):
         # Add the dictionary of label, format of 'mesh number': (classname, classnumber)
         labels = temp1
     # Opens the file with the excluded models
-    file = open(SAVED_DATA + "exclude.txt")
+    file = open(s.SAVED_DATA + "exclude.txt")
     exclude = list(file.readline().split(','))
     exclude = [x.strip() for x in exclude]
 
@@ -96,7 +91,7 @@ def import_dataset(BATCH_PATH) -> ([Shape], defaultdict):
             # Appending to list
             shapes.append(shape)
 
-    np.save(SAVED_DATA + 'labels.npy', labels)
+    np.save(s.SAVED_DATA + 'labels.npy', labels)
     return shapes, labels
 
 
@@ -104,19 +99,17 @@ def import_normalised_data():
 
     print('Loading normalised shapes and labels from cache . . .')
 
-    labels = np.load(SAVED_DATA + 'labels.npy', allow_pickle=True)
-    tot_verts = np.load(SAVED_DATA + 'n_verts.npy', allow_pickle=True)
-    tot_faces = np.load(SAVED_DATA + 'n_faces.npy', allow_pickle=True)
-    features = np.load(SAVED_DATA + 'features.npy', allow_pickle=True)
+    labels = np.load(s.SAVED_DATA + 'labels.npy', allow_pickle=True)
+    features = np.load(s.SAVED_DATA + 'features.npy', allow_pickle=True)
 
     shapes = []
-    for filename in os.listdir(NORMALIZED_DATA):
+    for filename in os.listdir(s.NORMALIZED_DATA):
         if filename.endswith('.npy'):
-            shape = np.load(NORMALIZED_DATA + filename, allow_pickle=True)[0]
+            shape = np.load(s.NORMALIZED_DATA + filename, allow_pickle=True)[0]
 
 
             off_file_name = 'n' + str(shape.get_id()) + '.off'
-            mesh = trm.load_mesh(NORMALIZED_DATA + off_file_name)
+            mesh = trm.load_mesh(s.NORMALIZED_DATA + off_file_name)
             shape.set_mesh(mesh)
             shapes.append(shape)
 

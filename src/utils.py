@@ -8,10 +8,11 @@ from tkinter import ttk
 from tkinter.filedialog import askopenfilename
 
 from src.shape import Shape
+from src.settings import Settings
 # from shape import Shape
+# from settings import Settings
 
-DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep
-SAVED_DATA = DATA_PATH + 'cache' + os.sep
+s = Settings()
 
 
 # Parse a .off file
@@ -100,10 +101,8 @@ def read_info(file, shape):
 
 
 def pick_file():
-    DATA_PATH = os.path.join(os.getcwd(), 'data') + os.sep + 'benchmark' + os.sep + 'db' + os.sep
-
     root = Tk()
-    root.filename = askopenfilename(initialdir=DATA_PATH,
+    root.filename = askopenfilename(initialdir=s.DATA_PATH,
                                     filetypes =(("OFF files", "*.off"),("PLY files", "*.ply"),("All Files","*.*")),
                                     title="Choose a file."
                                    )
