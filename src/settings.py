@@ -94,6 +94,26 @@ class Settings:
 
     def __init__(self):
         # Sanity check
+
+        if self.FORCE_IMPORT is None: self.FORCE_IMPORT = False
+        if self.DISPLAY_BATCH_BN is None: self.DISPLAY_BATCH_BN = False
+        if self.DISPLAY_BATCH_AN is None: self.DISPLAY_BATCH_AN = False
+        if self.DISPLAY_PROGRESS is None: self.DISPLAY_PROGRESS = True
+        if self.INFINITE_QUERY_LOOP is None: self.INFINITE_QUERY_LOOP = False
+        if self.USE_CUSTOM_DISTANCE is None: self.USE_CUSTOM_DISTANCE = True
+        if self.USE_KNN is None: self.USE_KNN = True
+        if self.USE_RNN is None: self.USE_RNN = True
+        if self.KNN_SIZE is None:
+            warnings.warn("Settings: KNN_SIZE not set. Assigned default value.", UserWarning)
+            self.KNN_SIZE = 11
+        if self.RNN_RANGE is None:
+            warnings.warn("Settings: RNN_RANGE not set. Assigned default value.", UserWarning)
+        if self.CATEGORIES is None:
+            raise ValueError("Settings: CATEGORIES not set.")
+        if self.AVG_VERTS is None: self.AVG_VERTS = 2000
+        if self.Q1_VERTS is None: self.Q1_VERTS = 1000
+        if self.Q3_VERTS is None: self.Q1_VERTS = 3000
+
         if self.RNN_RANGE > 1 or self.RNN_RANGE < 0:
             raise ValueError("Settings: RNN RANGE value not valid.")
 
