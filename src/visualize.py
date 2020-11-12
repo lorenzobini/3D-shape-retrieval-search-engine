@@ -59,7 +59,7 @@ def visualize(shapes_list):
 
     # create window to render 3d mesh
     window = create_window()
-    InitGL()
+    InitGL(1280, 720)
 
     shapes = shapes_list
     vertices = np.array(shapes[i].vertices)
@@ -232,7 +232,7 @@ def key_callback(window, key, scancode, action, mods):
             i = 0
         else:
             i += 1
-        print("Next model which is: " + str(shapes[i].shape_id))
+        print("Next model which is: " + str(shapes[i].get_id()))
         vertices = np.array(shapes[i].vertices)
         indices = np.array(shapes[i].faces)
     elif key == GLFW_KEY_V:
