@@ -36,10 +36,10 @@ shapes = None
 saves = []
 
 
-# Initializes the GL screen
-
-
 def InitGL(width, height):
+    """
+    Initializes OpenGL window.
+    """
     glShadeModel(GL_SMOOTH)				# Enables Smooth Color Shading
     glClearColor(1.0, 1.0, 1.0, 1.0)	# This Will Clear The Background Color To Black
     glClearDepth(1.0)					# Enables Clearing Of The Depth Buffer
@@ -49,11 +49,17 @@ def InitGL(width, height):
 
 
 def visualize(shapes_list):
+    """
+    Displays the 3D shape within the visualization window.
+    ----------------------------
+    Args:
+        shapes_list (obj: 'list' of obj: 'Shape'): The list of shapes
+    """
     global xrot, yrot, shapes, vertices, indices
 
     # create window to render 3d mesh
     window = create_window()
-    InitGL(1280, 720)
+    InitGL()
 
     shapes = shapes_list
     vertices = np.array(shapes[i].vertices)
@@ -115,6 +121,9 @@ def visualize(shapes_list):
 
 
 def create_window():
+    """
+    It creates a new window.
+    """
     # initializing glfw library
     if not glfw.init():
         raise Exception("glfw cannot be initialized!")
@@ -139,6 +148,9 @@ def create_window():
 
 
 def window_resize(window, width, height):
+    """
+    It resizes the current window.
+    """
     if height == 0:						# Prevent A Divide By Zero If The Window Is Too Small 
         height = 1
 
@@ -149,6 +161,9 @@ def window_resize(window, width, height):
 
 
 def key_callback(window, key, scancode, action, mods):
+    '''
+    It executes an action based on pressed key.
+    '''
     global z, xspeed, yspeed, rotation, xas, yas, vertices, indices, i , DRAW_EDGES, saves
     # avoid thrashing this procedure 
     time.sleep(0.01)
@@ -217,7 +232,7 @@ def key_callback(window, key, scancode, action, mods):
             i = 0
         else:
             i += 1
-        print("Next model which is: " + str(shapes[i].id))
+        print("Next model which is: " + str(shapes[i].shape_id))
         vertices = np.array(shapes[i].vertices)
         indices = np.array(shapes[i].faces)
     elif key == GLFW_KEY_V:
@@ -228,7 +243,7 @@ def key_callback(window, key, scancode, action, mods):
             print("Edges are not drawn.")
             DRAW_EDGES = False
     elif key == 83:
-        saves.append(shapes[i].id)
+        saves.append(shapes[i].shape_id)
         print(len(saves))
     else:
         print("Key %d pressed. No action there yet.\n"%(key))

@@ -1,11 +1,12 @@
 import numpy as np
-import os
 import copy
-from collections.abc import Iterable
 import trimesh as trm
 from tkinter import *
-from tkinter import ttk
 from tkinter.filedialog import askopenfilename
+import matplotlib.pyplot as plt
+from sklearn.manifold import TSNE
+import matplotlib.patheffects as PathEffects
+import seaborn as sns
 
 from src.shape import Shape
 from src.settings import Settings
@@ -14,21 +15,52 @@ from src.settings import Settings
 
 s = Settings()
 
+sns.set_style('darkgrid')
+sns.set_palette('muted')
+sns.set_context("notebook", font_scale=1.5, rc={"lines.linewidth": 2.5})
 
-# Parse a .off file
-def read_off(file):
+
+def read_off(file) -> ([float], [int], int, int):
+    """
+    It parses an .OFF file.
+    ----------------------------
+    Args:
+        file: The .PLY file
+
+    Returns:
+        (obj: 'tuple' of (obj: 'list' of float, obj: 'list' of int, int, int)):
+                    The vertices of the shape, the faces of the shape, the number of vertices, the number of faces
+
+    Raises:
+        ImportError
+    """
     if 'OFF' != file.readline().strip():
-        raise('Not a valid OFF header')
+        raise('Not a valid OFF header', ImportError)
+
     n_verts, n_faces, other = tuple([int(s) for s in file.readline().strip().split(' ')])
     verts = [[float(s) for s in file.readline().strip().split(' ')] for i_vert in range(n_verts)]
     faces = [[int(s) for s in file.readline().strip().split(' ')] for i_face in range(n_faces)]
+
     return verts, faces, n_verts, n_faces
 
 
-# Parse a .ply file
 def parse_ply(file):
+    """
+    It parses an .PLY file.
+    ----------------------------
+    Args:
+        file: The .PLY file
+
+    Returns:
+        (obj: 'tuple' of (obj: 'list' of float, obj: 'list' of int, int, int)):
+                    The vertices of the shape, the faces of the shape, the number of vertices, the number of faces
+
+    Raises:
+        ImportError
+    """
     if 'ply' != file.readline().strip():
-        raise ('Not a valid PLY header')
+        raise ('Not a valid PLY header', ImportError)
+
     while True:
         line = str(file.readline().strip())
         if line.startswith('element vertex'):
@@ -45,43 +77,72 @@ def parse_ply(file):
             elif line == 'property list uchar int vertex_indices':
                 continue
             else:
-                raise ('Not a valid PLY header. Extra properties can not be evaluated.')
+                raise ('Not a valid PLY header. Extra properties can not be evaluated.', ImportError)
         if line == 'end_header':
             break
 
     verts = [[float(s) for s in file.readline().strip().split(' ')] for i_vert in range(n_verts)]
     faces = [[int(s) for s in file.readline().strip().split(' ')] for i_face in range(n_faces)]
+
     return verts, faces, n_verts, n_faces
 
 
-# Read the classes from the .cla file
 def read_classes(file, class_list):
+    """
+    It reads the classes from a .CLA file
+    ----------------------------
+    Args:
+        file: The .CLA file
+        class_list: The list of classes
+
+    Returns:
+        class_dict (obj: 'dict'): The dictionary containing class id and respective class name
+        class_list (obj: 'list' of str): The list of all found classes
+
+    Raises:
+        ImportError
+    """
+
     if 'PSB' not in file.readline().strip():
-        raise ('Not a valid PSB classification header')
+        raise ('Not a valid PSB classification header', ImportError)
+
     _, num_models = file.readline().strip().split()
     modelcount = 0
     class_dict = {}
+
     while modelcount < int(num_models):
         line = file.readline().strip().split()
         if len(line) == 0:
             pass  
-        elif len(line) > 2  and line[2] == '0': # empty class label
+        elif len(line) > 2 and line[2] == '0':  # empty class label
             pass
         elif len(line) > 2:
             class_name = str(line[0])
             # if the class not in the class_list add it
-            if class_name  not in class_list:
+            if class_name not in class_list:
                 class_list.append(class_name)
         else: # add the class to the number of the model
-            class_id = class_list.index(class_name) # give class id based on class_list index
+            class_id = class_list.index(class_name)  # give class id based on class_list index
             class_dict[line[0]] = (class_id, class_name)
             modelcount += 1
 
     return class_dict, class_list
 
 
-# Read the .txt field and retrieve information
 def read_info(file, shape):
+    """
+    It parses extra information from the .TXT file associated with a shape.
+    ----------------------------
+    Args:
+        file: The .TXT file
+        shape (obj: 'Shape'): The associated shape
+
+    Returns:
+        shape (obj: 'Shape): The updated shape
+
+    Raises:
+        ImportError
+    """
     for line in file:
         if line.startswith('mid'):
             shape.set_id(int(line.split()[-1])) 
@@ -101,9 +162,19 @@ def read_info(file, shape):
 
 
 def pick_file():
+    """
+    It opens a file picker window and lets the user choose a .OFF or .PLY file to import
+    ----------------------------
+    Returns:
+        shape (obj: 'Shape'): The chosen shape
+
+    Raises:
+        FileNotFoundError
+        FileExistsError
+    """
     root = Tk()
-    root.filename = askopenfilename(initialdir=s.DATA_PATH,
-                                    filetypes =(("OFF files", "*.off"),("PLY files", "*.ply"),("All Files","*.*")),
+    root.filename = askopenfilename(initialdir=s.DATA_SHAPES_PRICETON,
+                                    filetypes =(("OFF files", "*.off"), ("PLY files", "*.ply"), ("All Files", "*.*")),
                                     title="Choose a file."
                                    )
     print(root.filename)
@@ -134,17 +205,36 @@ def pick_file():
     return shape
 
 
-def calculate_box(vertices):
-    
+def calculate_box(vertices: [[float]]) -> [float]:
+    """
+    It calculates the surrounding bounding box.
+    ----------------------------
+    Args:
+        vertices (obj: 'list' of obj: 'list' of float): The list of vertices
+
+    Returns:
+        shape (obj: 'list' of floats): The vertices of the bounding box
+
+
+    """
     x_coords = [x[0] for x in vertices]
     y_coords = [x[1] for x in vertices]
     z_coords = [x[2] for x in vertices]
 
-    return [min(x_coords),min(y_coords), min(z_coords), max(x_coords), max(y_coords), max(z_coords)]
+    return [min(x_coords), min(y_coords), min(z_coords), max(x_coords), max(y_coords), max(z_coords)]
 
 
-# Function that removes TriangleMesh objects for saving
-def remove_meshes(shapes):
+def remove_meshes(shapes: [Shape]) -> [Shape]:
+    """
+    It removes Trimesh mesh from a given set of Shape object to facilitate saving.
+    ----------------------------
+    Args:
+       shapes (obj: 'list' of obj: 'Shape'): The list of shapes
+
+    Returns:
+       new_shapes (obj: 'list' of obj: 'Shape'): The list of shapes with Trimesh meshes removed
+
+    """
     new_shapes = []
     for shape in shapes:
         new_shape = copy.deepcopy(shape)
@@ -154,8 +244,15 @@ def remove_meshes(shapes):
     return new_shapes
 
 
-# Function to write off file on disk
-def write_off(path, shape):
+def write_off(path: str, shape: Shape):
+    """
+    It saves a Shape object at the specified path in .OFF format.
+    ----------------------------
+    Args:
+        path (str): The global path
+        shape (obj: 'Shape'): The shape to save
+
+    """
     verts = shape.get_vertices()
     faces = shape.get_faces()
 
@@ -173,8 +270,18 @@ def write_off(path, shape):
     f.close()
 
 
-# Calculates eigenvectors based on the vertices
-def calc_eigenvectors(verts):
+def calc_eigenvectors(verts: [[float]]):
+    """
+    It computes eigenvectors from a set of vertices.
+    ----------------------------
+    Args:
+       verts (obj: 'list' of obj: 'list' of float): The list of vertices
+
+    Returns:
+        eigenvalues (obj: 'list'): The list of eigenvalues
+        eigenvectors (obj: 'list'): The list of eigenvectors
+
+    """
     A = np.zeros((3, len(verts)))
 
     A[0] = np.array([x[0] for x in verts]) # First row is all the X_coords
@@ -183,31 +290,63 @@ def calc_eigenvectors(verts):
     
     A_cov = np.cov(A) # This is returns a 3x3
     eigenvalues, eigenvectors = np.linalg.eigh(A_cov)
+
     return eigenvalues, eigenvectors
 
 
 # Compute the angle between 3 points
-def compute_angle(a, b, c):
+def compute_angle(a: [float], b: [float], c: [float]) -> float:
+    """
+    It computes the angle between three points.
+    ----------------------------
+    Args:
+       a (float): The first vertex
+       b (float): The second vertex
+       c (float): The third vertex
+
+    Returns:
+       angle (float): The angle enclosed by the three vertices
+
+    """
     ba = a - b
     bc = c - b
 
     cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
     angle = np.arccos(np.abs(cosine_angle))
+
     return angle
 
 
-# Normalizing a histogram H = {hi} is simple: Replace each value hi by hi/ Si hi. This way, each bar becomes a percentage
-# in [0,1], regardless of the total number of samples Si hi.
-def normalize_hist(hist):
+def normalize_hist(hist) -> [float]:
+    """
+    It normalizes the values of a histogram.
+    ----------------------------
+    Args:
+       hist (float or int): The histogram to normalize
+
+    Returns:
+       newhist (obj: 'list' of float): The normalized histogram
+
+    """
     hsum = np.sum(hist)
     newhist = []
     for hi in hist:
         newhist.append(hi/hsum)
+
     return newhist
 
 
-# Flattens irregular features array of non-iterables and lists
-def flatten_features_array(features):
+def flatten_features_array(features: {}) -> []:
+    """
+    It flattens irregular features array of non-iterables and lists.
+    ----------------------------
+    Args:
+       features (obj: 'dict'): The features in the form of a dictionary
+
+    Returns:
+       flattened (obj: 'list'): The features in the form of a flattened array
+
+    """
     flattened = []
     flattened.append(features["volume"])
     flattened.append(features["area"])
@@ -229,5 +368,94 @@ def flatten_features_array(features):
     return flattened
 
 
+def convert_dict_to_arr(features: {}, labels: {}) -> ([], []):
+    """
+    It converts features and labels to array and save it to disk.
+    ----------------------------
+    Args:
+       features (obj: 'dict'): The features in the form of a dictionary
+       labels (obj: 'dict'): The labels in the form of a dictionary
+
+    Returns:
+        (obj: 'tuple' of (obj: 'list', obj: 'list'):
+                    The features in the form of a flattened array, the labels in the form of a flattened array
+
+    """
+
+    features_arr = []
+    labels_arr = []
+
+    for id, featuresList in features.items():
+
+        labels_arr.append([labels.get(str(id))[0], labels.get(str(id))[1], id])
+
+        # Elementary features
+        v = featuresList["volume"]
+        a = featuresList["area"]
+        c = featuresList["compactness"]
+        bb = featuresList["bbox_volume"]
+        d = featuresList["diameter"]
+        e = featuresList["eccentricity"]
+        elem_features = [v, a, c, bb, d, e]
+        
+        # Global features
+        a3, d1, d2, d3, d4 = [], [], [], [], []
+        for x in featuresList["A3"][0]:
+            a3.append(x)
+        for x in featuresList["D1"][0]:
+            d1.append(x)
+        for x in featuresList["D2"][0]:
+            d2.append(x)
+        for x in featuresList["D3"][0]:
+            d3.append(x)
+        for x in featuresList["D4"][0]:
+            d4.append(x)
+        glob_features = np.concatenate((a3, d1, d2, d3, d4))
+        features_arr.append(np.concatenate((elem_features, glob_features)))
+
+    np.savetxt(s.SAVED_DATA + 'features_arr.txt', np.asarray(features_arr), delimiter=',')
+
+    return np.asarray(features_arr), np.asarray(labels_arr)
 
 
+def tsne_plot(features: {}, labels: {}):
+    """
+    Computes and plot dimensionality reduction.
+    ----------------------------
+    Args:
+       features (obj: 'dict'): The features
+       labels (obj: 'dict'): The labels
+
+    """
+    tsne = TSNE(n_components=2, perplexity=100, n_iter=1000, random_state=0)
+    tsne_result = tsne.fit_transform(features)
+
+    # Color specification
+    n_labels = len(np.unique(labels[:,0]))
+    palette = np.array(sns.color_palette('hls', n_labels))
+
+    fig, ax = plt.subplots(figsize=(8,8))
+
+    # TODO: Print legend
+    # rgb2hex = lambda r,g,b: f"#{r:02x}{g:02x}{b:02x}"
+    # for x, y, color, label in zip(tsne_result[:,0], tsne_result[:,1], labels[:,0], labels[:,1]):
+    #     color = rgb2hex(palette[int(color)][0], palette[int(color)][1], palette[int(color)][2])
+    #     ax.scatter(x, y, linewidth=0, color=color, label=label)
+
+    ax.scatter(tsne_result[:,0], tsne_result[:,1], linewidth=0, c=palette[labels[:,0].astype(np.int)])
+    ax.axis('tight')
+
+    # Add the labels for each digit corresponding to the label
+    txts = []
+
+    for i in range(n_labels):
+
+        # Position of each label at median of data points.
+        xtext, ytext = np.median(tsne_result[labels[:,0].astype(np.int) == i, :], axis=0)
+        txt = ax.text(xtext, ytext, str(i), fontsize=16)
+        txt.set_path_effects([
+            PathEffects.Stroke(linewidth=5, foreground='white'),
+            PathEffects.Normal()])
+        txts.append(txt)
+
+    plt.show()

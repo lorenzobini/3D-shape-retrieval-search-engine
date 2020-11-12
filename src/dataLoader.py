@@ -1,23 +1,26 @@
 from collections import defaultdict
-# import open3d as o3d
-import trimesh as trm
 import os
+# from utils import *
+# from settings import Settings
 
-# Imports from other files,
-from src.shape import Shape
-from src.normalize import normalize_data
 from src.utils import *
 from src.settings import Settings
 
-# from shape import Shape
-# from normalize import normalize_data
-# from utils import *
-# from settings import Settings
 
 s = Settings()
 
 
-def import_dataset(BATCH_PATH) -> ([Shape], defaultdict):
+def import_dataset(path) -> ([Shape], defaultdict):
+    """
+    It import the shapes stored within the path specified.
+    ----------------------------
+    Args:
+        path (str): The global path of the shape batch
+
+    Returns:
+        (obj: 'tuple' of (obj: 'list' of obj: 'Shape', obj: 'defaultdict')):
+                    The loaded shapes, the dictionary containing the labels of all shapes loaded thus far
+    """
 
     print('Importing shapes and labels . . .')
 
@@ -53,7 +56,7 @@ def import_dataset(BATCH_PATH) -> ([Shape], defaultdict):
     exclude = [x.strip() for x in exclude]
 
     # navigating through the dataset to find .off and .ply files
-    for dirName, subdirList, objList in os.walk(BATCH_PATH):
+    for dirName, subdirList, objList in os.walk(path):
         # Importing the shape first
         shape = None
         for obj in objList:
@@ -92,10 +95,18 @@ def import_dataset(BATCH_PATH) -> ([Shape], defaultdict):
             shapes.append(shape)
 
     np.save(s.SAVED_DATA + 'labels.npy', labels)
+
     return shapes, labels
 
 
 def import_normalised_data():
+    """
+    It import the normalised shapes stored in cache.
+    ----------------------------
+    Returns:
+        (obj: 'tuple' of (obj: 'list' of obj: 'Shape', obj: 'dict', obj: 'dict')):
+                    The loaded shapes, the dictionary of labels, the dictionary of features
+    """
 
     print('Loading normalised shapes and labels from cache . . .')
 
@@ -105,12 +116,12 @@ def import_normalised_data():
     shapes = []
     for filename in os.listdir(s.NORMALIZED_DATA):
         if filename.endswith('.npy'):
-            shape = np.load(s.NORMALIZED_DATA + filename, allow_pickle=True)[0]
-
-
             off_file_name = 'n' + str(shape.get_id()) + '.off'
+
+            shape = np.load(s.NORMALIZED_DATA + filename, allow_pickle=True)[0]
             mesh = trm.load_mesh(s.NORMALIZED_DATA + off_file_name)
             shape.set_mesh(mesh)
+
             shapes.append(shape)
 
     print("Existing normalised image set successfully loaded.")

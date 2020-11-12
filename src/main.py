@@ -1,8 +1,3 @@
-import os
-import numpy as np
-import matplotlib.pyplot as plt
-
-# from shape import Shape
 # from visualize import visualize
 # from normalize import normalize_data, normalize_shape
 # from dataLoader import import_dataset, import_normalised_data
@@ -10,10 +5,9 @@ import matplotlib.pyplot as plt
 # from featureMatching import *
 # from utils import pick_file
 
-from src.shape import Shape
 from src.visualize import visualize
 from src.normalize import normalize_data, normalize_shape
-from src.dataLoader import import_dataset, import_normalised_data
+from src.dataLoader import import_dataset
 from src.featureExtraction import *
 from src.featureMatching import *
 from src.utils import pick_file
@@ -28,8 +22,6 @@ if __name__ == "__main__":
     # OFFLINE WORKFLOW - TO BE EXECUTED ONLY ONCE
     # --------------------------------------------------------
 
-    shapes, labels, features = None, None, None
-
     if s.FORCE_IMPORT or len(os.listdir(s.NORMALIZED_DATA)) == 0:
         # Step 1: Importing data -----------------------------------------
         # Normalised shapes not present, importing and normalising dataset
@@ -43,14 +35,14 @@ if __name__ == "__main__":
 
             # Visualising shapes
             if s.DISPLAY_BATCH_BN:
-                visualize(shapes, labels)
+                visualize(shapes)
 
             # Step 2: Normalising and remeshing shapes --------------------
             shapes, tot_verts, tot_faces = normalize_data(shapes)
 
             # Visualising normalised shapes
             if s.DISPLAY_BATCH_AN:
-                visualize(shapes, labels)
+                visualize(shapes)
 
             # Step 3: Feature extraction ----------------------------------
             shapes, features = calculate_metrics(shapes, False)
@@ -59,10 +51,9 @@ if __name__ == "__main__":
                 print("Progress:" + str(int((i+1/len(batches))*100)) + "%")
         
 
-
         features = np.load(s.SAVED_DATA + "features.npy", allow_pickle=True)
         
-        # Standarize numeric features
+        # Standardize numeric features
         features = standardize(features)
 
         # calculate the weights for the similarity measure
@@ -84,7 +75,9 @@ if __name__ == "__main__":
 
     try:
         features = np.load(s.SAVED_DATA + "features.npy", allow_pickle=True)
+        labels = np.load(s.SAVED_DATA + "labels.npy", allow_pickle=True)
         features = features.item()
+        labels = labels.item()
     except:
         pass
 
@@ -123,7 +116,7 @@ if __name__ == "__main__":
         if s.USE_CUSTOM_DISTANCE:
             # Calculate similarities
             print('Calculate similarities . . .')
-            similarities = calc_distance(features, shape_features, shape.get_id())
+            similarities = calc_distance(features, shape_features)
 
             print("Retrieving and showing similar shapes")
             shapes = load_similar(similarities, shape)
@@ -138,15 +131,18 @@ if __name__ == "__main__":
             neighbors = k_neighbors(shape_features, features)
             n_shapes_id, n_distances = neighbors[0][1:], neighbors[1][1:]
 
+            for dist in n_distances:
+                print(dist)
+
             # Retrieving shapes from database
             n_shapes = [shape]
-            for id in n_shapes_id:
-                filename = s.NORMALIZED_DATA + "n" + str(id) + ".off"
+            for shape_id in n_shapes_id:
+                filename = s.NORMALIZED_DATA + "n" + str(shape_id) + ".off"
                 file = open(filename, 'r')
                 verts, faces, n_verts, n_faces = read_off(file)
                 mesh = trm.load_mesh(filename)
 
-                shape.set_id(id)
+                shape.set_id(shape_id)
 
                 n_shapes.append(Shape(verts, faces, mesh))
 
@@ -159,8 +155,8 @@ if __name__ == "__main__":
 
             # Retrieving shapes from database
             n_shapes = [shape]
-            for id in n_shapes_id:
-                filename = s.NORMALIZED_DATA + "n" + str(id) + ".off"
+            for shape_id in n_shapes_id:
+                filename = s.NORMALIZED_DATA + "n" + str(shape_id) + ".off"
                 file = open(filename, 'r')
                 verts, faces, n_verts, n_faces = read_off(file)
                 mesh = trm.load_mesh(filename)
@@ -169,10 +165,13 @@ if __name__ == "__main__":
 
             visualize(n_shapes)
 
+
         if s.INFINITE_QUERY_LOOP:
             continue
         else:
             break
 
-
-
+    # Show Dimensionality reduction graphs
+    if s.DISPLAY_TSNE:
+        features_arr, labels_arr = convert_dict_to_arr(features, labels)
+        tsne_plot(features_arr, labels_arr)

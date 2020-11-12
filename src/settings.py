@@ -78,7 +78,12 @@ class Settings:
     Q1_VERTS: int = 1000
     Q3_VERTS: int = 3000
 
-
+    '''
+    DISPLAY T-SNE: t-sne (t-distributed stochastic neighbor embedding) is a dimensionality reduction technique. It
+    is used to visualize the high-dimensional shape data set by bringing it back to two dimensions. 
+    '''
+    DISPLAY_TSNE: bool = True
+    
     '''
     ##################### DO NOT CHANGE
     '''
@@ -113,6 +118,7 @@ class Settings:
         if self.AVG_VERTS is None: self.AVG_VERTS = 2000
         if self.Q1_VERTS is None: self.Q1_VERTS = 1000
         if self.Q3_VERTS is None: self.Q1_VERTS = 3000
+        if self.DISPLAY_TSNE is None: self.DISPLAY_TSNE = False
 
         if self.RNN_RANGE > 1 or self.RNN_RANGE < 0:
             raise ValueError("Settings: RNN RANGE value not valid.")

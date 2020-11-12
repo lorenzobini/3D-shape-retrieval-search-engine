@@ -1,22 +1,29 @@
 import math
 import random
+import warnings
+import os
 from scipy import spatial
-
-
-# Other file imports
-# from shape import Shape
-# from boundingbox import BoundingBox
 # from utils import *
 # from settings import Settings
 from src.utils import *
-from src.boundingbox import BoundingBox
-from src.shape import Shape
 from src.settings import Settings
 
 s = Settings()
 
 
-def calculate_metrics(shapes, last_batch = False):
+def calculate_metrics(shapes: [Shape]) -> ([Shape], {}):
+    """
+    For each shape of the batch, it calculates the shape metrics and adds them
+    the the 2D features dictionary.
+    ----------------------------
+    Args:
+        shapes (obj: 'list' of  obj: 'Shape'): The list of shapes
+
+    Returns:
+        shapes (obj: 'list' of obj: 'Shape'): The list of shapes
+        features (obj: dict): The dictionary containing the feature metrics of each shape
+    """
+
     print("Calculating all the object features . . .")
 
     # If some features are present, load them
@@ -25,14 +32,14 @@ def calculate_metrics(shapes, last_batch = False):
         try:
             features = features.item()
         except:
-            pass
+            warnings.warn_explicit("Error reading feature dictionary.", ImportWarning)
     else:
         features = {}
 
-     # calculate the metrics for each shape
+    # Calculate the metrics for each shape
     for shape in shapes:
-        id = shape.get_id()
-        features[id] = calculate_single_shape_metrics(shape)
+        shape_id = shape.get_id()
+        features[shape_id] = calculate_single_shape_metrics(shape)
 
     print("Done calculating the features.")
 
@@ -44,15 +51,25 @@ def calculate_metrics(shapes, last_batch = False):
     return shapes, features
 
 
-# Calculate features for a single shape
-def calculate_single_shape_metrics(shape):
+def calculate_single_shape_metrics(shape: Shape) -> {}:
+    """
+    It calculates the shape metrics and adds them
+    the the 1D features dictionary of the shape.
+    ----------------------------
+    Args:
+        shape (obj: 'Shape'): The shape
+
+    Returns:
+        features (obj: 'dict'): The dictionary containing the feature metrics of the shape
+    """
+
     features = {}
 
     # calculate the default metrics
     features["volume"] = volume(shape)
     features["area"] = area(shape)
-    features["compactness"] = compactness(features["area"], features["volume"])
     features["bbox_volume"] = bbox_volume(shape)
+    features["compactness"] = compactness(features["area"], features["bbox_volume"])
     features["diameter"] = diameter(shape)
     features["eccentricity"] = eccentricity(shape)
 
@@ -67,8 +84,16 @@ def calculate_single_shape_metrics(shape):
     return features
 
 
-def volume(shape):  
+def volume(shape: Shape) -> float:
+    """
+    It calculates the volume of the shape
+    ----------------------------
+    Args:
+        shape (obj: 'Shape'): The shape
 
+    Returns:
+        volume (float): The volume of the shape
+    """
     mesh = shape.get_mesh()
     # Take the convex hull: the smallest enclosing convex polyhedron
     ch_verts = mesh.convex_hull.vertices
@@ -83,17 +108,51 @@ def volume(shape):
             p3 = np.subtract(ch_verts[face[2]], center)
 
             volume = volume + (np.abs(np.dot(p1, np.cross(p2, p3))) / 6)
+
     return volume
 
 
-def area(shape):
+def area(shape: Shape) -> float:
+    """
+    It returns the area of the shape
+    ----------------------------
+    Args:
+        shape (obj: 'Shape'): The shape
+
+    Returns:
+        area (float): The area of the shape
+    """
     mesh = shape.get_mesh()
     return mesh.area
 
-def compactness(V, S):
-    return pow(S, 3) / (36*math.pi*(pow(V, 2))) # Volume of the shape's axis-aligned bounding box
 
-def bbox_volume(shape):
+def compactness(area: float, bbox_volume: float) -> float:
+    """
+    It calculates the compactness of the shape using the shape's surface area
+    and the axis-aligned bounding box volume
+    ----------------------------
+    Args:
+        area (float): The area of the shape
+        bbox_volume (float): The volume of the shape axis aligned bounding box
+
+    Returns:
+        compactness (float): The compactness of the shape
+    """
+
+    compactness = pow(area, 3) / (36 * math.pi * (pow(bbox_volume, 2)))
+    return compactness
+
+
+def bbox_volume(shape: Shape) -> float:
+    """
+    It calculates the volume of the axis-aligned bounding box surrounding the shape
+    ----------------------------
+    Args:
+        shape (obj: 'Shape'): The shape
+
+    Returns:
+        bbox_volume (float): The volume of the axis-aligned bounding box surrounding the shape
+    """
     bbox = shape.get_buinding_box()
     x = bbox.get_xmax() - bbox.get_xmin()
     y = bbox.get_ymax() - bbox.get_ymin()
@@ -104,8 +163,17 @@ def bbox_volume(shape):
     return volume
 
 
-# Largest distance between two points on the surface of the shape
-def diameter(shape):
+def diameter(shape: Shape) -> float:
+    """
+    It calculates the diameter of the shape defined as the largest distance between
+    two points on the surface of the shape
+    ----------------------------
+    Args:
+        shape (obj: 'Shape'): The shape
+
+    Returns:
+        diameter (float): The diameter of the shape
+    """
     max_distance = 0
     for x1, y1, z1 in shape.get_vertices():
         for x2, y2, z2 in shape.get_vertices():
@@ -116,37 +184,66 @@ def diameter(shape):
     return max_distance
 
 
-# Calculate the ratio between the minor eigenvalue en major eigenvalue
-def eccentricity(shape):
+def eccentricity(shape: Shape) -> float:
+    """
+    It calculates the eccentricity of the shape defined as the ratio between the
+    minor eigenvalue and the major eigenvalue
+    ----------------------------
+    Args:
+        shape (obj: 'Shape'): The shape
+
+    Returns:
+        eccentricity (float): The eccentricity of the shape
+    """
     eigenvalues, _ = calc_eigenvectors(shape.get_vertices())
     min_eigen = np.min(eigenvalues)
     max_eigen = np.max(eigenvalues)
-    return np.abs(max_eigen)/np.abs(min_eigen)
+
+    eccentricity = np.abs(max_eigen)/np.abs(min_eigen)
+
+    return eccentricity
 
 
-def calc_distributions(shape):
+def calc_distributions(shape: Shape) -> {}:
+    """
+    It calculates the distribution A3,D1,D2,D3 of the shape by sampling several sets of
+    random vertices, and computes the respective histograms of the distributions
+    ----------------------------
+    Args:
+        shape (obj: 'Shape'): The shape
+
+    Returns:
+        descriptors (obj: 'dict' of obj: 'tuple' of (obj: 'list' of int, obj: 'list' of float)):
+                            The dictionary containing the five distributions in the form of
+                            histograms (number of occurrencies per bin, bins)
+    """
+
     descriptors = {}
+    center = shape.get_center()
 
-    verticeList = random.choices(list(shape.get_vertices()), k=5000)
-    center  = shape.get_center()
+    # Randomly sampling 5000 vertices
+    vertices = random.choices(list(shape.get_vertices()), k=5000)
 
     # Computing D1 -----------------------
     print("Computing D1 distribution . . .")
-    descriptors["D1"] = calc_D1(center, verticeList)
+    descriptors["D1"] = calc_D1(center, vertices)
 
-    verticeList = random.choices(list(shape.get_vertices()), k=1000)
+    # Randomly sampling 1000 vertices
+    vertices = random.choices(list(shape.get_vertices()), k=1000)
 
     # Computing D2 -----------------------
     print("Computing D2 distribution . . .")
-    verticesOne = verticeList[:]
-    verticesTwo = verticeList[500:]
-
+    verticesOne = vertices[:]
+    verticesTwo = vertices[500:]
     descriptors["D2"] = calc_D2(verticesOne, verticesTwo)
-    verticeList = random.sample(list(shape.get_vertices()), k=150)
+
+    # Randomly sampling 150 vertices
+    vertices = random.sample(list(shape.get_vertices()), k=150)
+
     # Computing A3, D3, D4 ---------------
-    verticesOne = verticeList[:50]
-    verticesTwo = verticeList[50:100]
-    verticesThree = verticeList[100:]
+    verticesOne = vertices[:50]
+    verticesTwo = vertices[50:100]
+    verticesThree = vertices[100:]
 
     A3 = []
     D3 = []
@@ -161,6 +258,7 @@ def calc_distributions(shape):
                 while True:
                     d = random.sample(list(shape.get_vertices()), k =1)[0]
                     if d is not a and d is not b and d is not c:
+                        # Computing D4 for the current combination
                         D4.append(calc_D4(a, b, c, d))
                         break
 
@@ -185,47 +283,88 @@ def calc_distributions(shape):
     return descriptors
 
 
-# Angle between 3 random vertices
-def calc_A3(a, b, c):
+def calc_A3(a: [float], b: [float], c: [float]) -> float:
+    """
+    It calculates the angle between 3 random vertices
+    ----------------------------
+    Args:
+        a (obj: 'list' of float): First vertex coordinates
+        b (obj: 'list' of float): Second vertex coordinates
+        c (obj: 'list' of float): Third vertex coordinates
+
+    Returns:
+        angle (float): The amplitude of the angle between the tree vertices
+    """
     angle = compute_angle(a, b, c)
 
     return angle
 
 
-# Distance between barycenter and random vertex, returns histogram vector and bin_edges
-def calc_D1(center, vertices):
+def calc_D1(center: [float], vertices: [[float]]) -> ([int], [float]):
+    """
+    It calculates the distribution of distances between barycenter and each vertex in the list
+    of sampled vertices
+    ----------------------------
+    Args:
+        center (obj: 'list' of float): The center of the shape
+        vertices (obj: 'list' of obj: 'list' of float): The list of samples vertices coordinates
+
+    Returns:
+        (hist, bin_edges) (obj: 'tuple' of (obj: 'list' of int, obj: 'list' of float)):
+                            The histogram of the distribution of distances between barycenter and vertices
+    """
+
     D = []
     (xc, yc, zc) = center
 
     for x, y, z in vertices:
         D.append(np.linalg.norm([[x, y, z], [ xc, yc, zc]]))
-        # D.append(spatial.distance.euclidean([x,y,z], center))
-    # crate histogram with 10 bins from 0 - 1.0
-    hist, bin_edges = np.histogram(np.array(D), bins = np.arange(0, 1.65, 0.15))
+
+    hist, bin_edges = np.histogram(np.array(D), bins=np.arange(0, 1.65, 0.15))
     hist = normalize_hist(hist)
 
     return (hist, bin_edges)
 
 
-# Distance between 2 random vertices
-def calc_D2(verticesOne, verticesTwo):
+def calc_D2(verticesOne: [[float]], verticesTwo: [[float]]) -> ([int], [float]):
+    """
+    It calculates the distribution of distances between each combinatorial pair of vertices in the lists
+    of sampled vertices
+    ----------------------------
+    Args:
+        verticesOne (obj: 'list' of obj: 'list' of float): The center of the shape
+        verticesTwo (obj: 'list' of obj: 'list' of float): The list of samples vertices coordinates
+
+    Returns:
+        (hist, bin_edges) (obj: 'tuple' of (obj: 'list' of int, obj: 'list' of float)):
+                            The histogram of the distribution of distances between the combinatorial pair of vertices
+    """
 
     D = []
 
-    # Loop over both sets to create the vertice combinations, 250000 total
+    # Loop over both sets to create the vertices combinations
     for x1, y1, z1 in verticesOne:
         for x2, y2, z2 in verticesTwo:
             D.append(spatial.distance.cityblock([x1, y1, z1] , [ x2, y2, z2]))
-    # Create histogram with 10 bins from 0 to 1.25 (as there where some values above 1)
 
     hist, bin_edges = np.histogram(np.array(D), bins= np.arange(0, 2.2, 0.2))
     hist = normalize_hist(hist)
 
-    return(hist, bin_edges)
+    return hist, bin_edges
 
 
-# Square root of area of triangle given by 3 random vertices
-def calc_D3(a, b, c):
+def calc_D3(a: [float], b: [float], c: [float]) -> float:
+    """
+    It calculates the square root of the area of a triangle given 3 random vertices
+    ----------------------------
+    Args:
+        a (obj: 'list' of float): First vertex coordinates
+        b (obj: 'list' of float): Second vertex coordinates
+        c (obj: 'list' of float): Third vertex coordinates
+
+    Returns:
+        sqrt_area (float): The square root of area of triangle
+    """
     (x1, y1, z1) = a
     (x2, y2, z2) = b
     (x3, y3, z3) = c
@@ -238,23 +377,46 @@ def calc_D3(a, b, c):
 
     sp = 0.5 * (p1_p2 + p1_p3 + p2_p3)
     area = np.sqrt(sp * (sp-p1_p2) * (sp-p1_p3) * (sp-p2_p3))
+    sqrt_area = np.sqrt(area)
 
-    return np.sqrt(area)
+    return sqrt_area
 
 
-# Cube root of volume of tetrahedron formed by 4 random vertices
-def calc_D4(p1, p2, p3, p4):
-    p1_c = np.subtract(p1, p4)
-    p2_c = np.subtract(p2, p4)
-    p3_c = np.subtract(p3, p4)
+def calc_D4(a: [float], b: [float], c: [float], d: [float]) -> float:
+    """
+    It calculates the cube root of the volume of a tetrahedron formed by 4 random vertices
+    ----------------------------
+    Args:
+        a (obj: 'list' of float): First vertex coordinates
+        b (obj: 'list' of float): Second vertex coordinates
+        c (obj: 'list' of float): Third vertex coordinates
+        d (obj: 'list' of float): Fourth vertex coordinates
+
+    Returns:
+        cbrt_volume (float): The cube root of the volume of the tetrahedron
+    """
+    p1_c = np.subtract(a, d)
+    p2_c = np.subtract(b, d)
+    p3_c = np.subtract(c, d)
 
     volume = np.abs(np.dot(p1_c, np.cross(p2_c, p3_c))) / 6
-    return np.cbrt(volume)
+    cbrt_volume = np.cbrt(volume)
+
+    return cbrt_volume
 
 
+def standardize(features: {}) -> {}:
+    """
+    It standardizes the features of all non-histogram features
+    ----------------------------
+    Args:
+        features (obj: 'dict'): The dictionary of features
 
-# Standardize the non-histogram features
-def standardize(features):
+    Returns:
+        features (obj: 'dict'): The dictionary of all features after standardisation
+    """
+
+    # Extracting single set of features to compute standardisation values
     V, A, C, BB, D, E = [], [], [], [], [], []
     for id, featuresList in features.items():
         V.append(featuresList["volume"])
@@ -266,6 +428,7 @@ def standardize(features):
 
     sdVals = save_standardization_vals(V, A, C, BB, D, E)
 
+    # Standardizing non-histogram features
     for id, featuresList in features.items():
         features[id]["volume"] = (featuresList["volume"] - sdVals["V_mean"]) / sdVals["V_std"]
         features[id]["area"] = (featuresList["area"] - sdVals["A_mean"]) / sdVals["A_std"]
@@ -274,12 +437,28 @@ def standardize(features):
         features[id]["diameter"] = (featuresList["diameter"] - sdVals["D_mean"]) / sdVals["D_std"]
         features[id]["eccentricity"] = (featuresList["eccentricity"] - sdVals["E_mean"]) / sdVals["E_std"]
 
+    # Saving standardized features and standardization values in cache
     np.save(s.SAVED_DATA + "features.npy", features)
     np.save(s.SAVED_DATA + "standardization_values.npy", sdVals)
+
     return features
 
 
-def save_standardization_vals(V, A, C, BB, D, E):
+def save_standardization_vals(V: [float], A: [float], C: [float], BB: [float], D: [float], E: [float]):
+    """
+     Computes standardisation values (mean and standard deviations) for each set of features
+     ----------------------------
+     Args:
+         V (obj: 'list' of float): Set of volume features
+         A (obj: 'list' of float): Set of area features
+         C (obj: 'list' of float): Set of compactness features
+         BB (obj: 'list' of float): Set of bounding-box volume features
+         D (obj: 'list' of float): Set of diameter features
+         E (obj: 'list' of float): Set of eccentricity features
+
+     Returns:
+         standardVals (obj: 'dict'): The dictionary of all standardization values
+     """
     standardVals = {}
     standardVals["V_mean"] = np.mean(V)
     standardVals["V_std"] = np.std(V)
