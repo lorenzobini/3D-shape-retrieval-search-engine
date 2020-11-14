@@ -8,10 +8,10 @@ from sklearn.manifold import TSNE
 import matplotlib.patheffects as PathEffects
 import seaborn as sns
 
-from src.shape import Shape
-from src.settings import Settings
-# from shape import Shape
-# from settings import Settings
+# from src.shape import Shape
+# from src.settings import Settings
+from shape import Shape
+from settings import Settings
 
 s = Settings()
 
@@ -427,35 +427,27 @@ def tsne_plot(features: {}, labels: {}):
        labels (obj: 'dict'): The labels
 
     """
-    tsne = TSNE(n_components=2, perplexity=100, n_iter=1000, random_state=0)
+    # T-SNE computation
+    tsne = TSNE(n_components=2, perplexity=40, n_iter=900, random_state=0)
     tsne_result = tsne.fit_transform(features)
 
     # Color specification
     n_labels = len(np.unique(labels[:,0]))
+    label_set = np.unique(labels[:,1])
     palette = np.array(sns.color_palette('hls', n_labels))
 
-    fig, ax = plt.subplots(figsize=(8,8))
-
-    # TODO: Print legend
-    # rgb2hex = lambda r,g,b: f"#{r:02x}{g:02x}{b:02x}"
-    # for x, y, color, label in zip(tsne_result[:,0], tsne_result[:,1], labels[:,0], labels[:,1]):
-    #     color = rgb2hex(palette[int(color)][0], palette[int(color)][1], palette[int(color)][2])
-    #     ax.scatter(x, y, linewidth=0, color=color, label=label)
-
-    ax.scatter(tsne_result[:,0], tsne_result[:,1], linewidth=0, c=palette[labels[:,0].astype(np.int)])
+    # Plot the scatter for each label seperatly
+    fig, ax = plt.subplots(figsize=(15,10))
+    for i in range(n_labels):
+        ax.scatter(tsne_result[labels[:,0].astype(np.int) == i,0], tsne_result[labels[:,0].astype(np.int) == i,1],  \
+            linewidth=0, c=np.array([palette[i]]), label=label_set[i])
     ax.axis('tight')
 
-    # Add the labels for each digit corresponding to the label
-    txts = []
+    # Shrink current axis by 20%
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.75, box.height])
 
-    for i in range(n_labels):
-
-        # Position of each label at median of data points.
-        xtext, ytext = np.median(tsne_result[labels[:,0].astype(np.int) == i, :], axis=0)
-        txt = ax.text(xtext, ytext, str(i), fontsize=16)
-        txt.set_path_effects([
-            PathEffects.Stroke(linewidth=5, foreground='white'),
-            PathEffects.Normal()])
-        txts.append(txt)
-
+    # Put a legend to the right of the current axis
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), ncol=2, fontsize=12)
+    ax.set_title("Dimensionality reduction with T-SNE")
     plt.show()

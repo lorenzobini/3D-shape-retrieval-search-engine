@@ -203,28 +203,28 @@ def key_callback(window, key, scancode, action, mods):
         z += 0.05
     elif key == GLFW_KEY_UP:  # decrease x rotation speed or translate left along x-axis;
         if rotation == 1:  # Change between rotation mode and translation mode
-            xspeed -= 0.02
+            xspeed -= 0.2
             print("X-Rotation speed is now at " + str(round(xspeed, 2))+ ".")
         else:
-            yas += 0.04 
+            yas += 0.05 
     elif key == GLFW_KEY_DOWN:  # increase x rotation speed or translate right along x-axis;
         if rotation == 1:
-            xspeed += 0.02
+            xspeed += 0.2
             print("X-Rotation speed is now at " + str(round(xspeed, 2))+ ".")
         else:
-            yas -= 0.04  
+            yas -= 0.05  
     elif key == GLFW_KEY_LEFT:  # decrease y rotation speed or translate down along the y-axis;
         if rotation == 1:
-            yspeed-=0.02
+            yspeed-=0.2
             print("Y-Rotation speed is now at " + str(round(yspeed, 2))+ ".")  
         else:
-            xas -= 0.04 
+            xas -= 0.05
     elif key == GLFW_KEY_RIGHT:  # increase y rotation speed or translate up along the x-axis;
         if rotation == 1:
-            yspeed += 0.02
+            yspeed += 0.2
             print("Y-Rotation speed is now at " + str(round(yspeed, 2))+ ".") 
         else:
-            xas += 0.04 
+            xas += 0.05 
     elif key == 340:  #Ignore the shift key
         pass
     elif key == GLFW_ENTER:  # For moving through the different meshes
@@ -242,9 +242,6 @@ def key_callback(window, key, scancode, action, mods):
         else: 
             print("Edges are not drawn.")
             DRAW_EDGES = False
-    elif key == 83:
-        saves.append(shapes[i].shape_id)
-        print(len(saves))
     else:
         print("Key %d pressed. No action there yet.\n"%(key))
 

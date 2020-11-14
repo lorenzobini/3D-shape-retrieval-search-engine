@@ -1,17 +1,17 @@
-# from visualize import visualize
-# from normalize import normalize_data, normalize_shape
-# from dataLoader import import_dataset, import_normalised_data
-# from featureExtraction import *
-# from featureMatching import *
-# from utils import pick_file
+from visualize import visualize
+from normalize import normalize_data, normalize_shape
+from dataLoader import import_dataset, import_normalised_data
+from featureExtraction import *
+from featureMatching import *
+from utils import pick_file, tsne_plot, convert_dict_to_arr
 
-from src.visualize import visualize
-from src.normalize import normalize_data, normalize_shape
-from src.dataLoader import import_dataset
-from src.featureExtraction import *
-from src.featureMatching import *
-from src.utils import pick_file
-from src.settings import Settings
+# from src.visualize import visualize
+# from src.normalize import normalize_data, normalize_shape
+# from src.dataLoader import import_dataset
+# from src.featureExtraction import *
+# from src.featureMatching import *
+# from src.utils import pick_file
+# from src.settings import Settings
 
 
 s = Settings()
@@ -115,7 +115,7 @@ if __name__ == "__main__":
 
         if s.USE_CUSTOM_DISTANCE:
             # Calculate similarities
-            print('Calculate similarities . . .')
+            print('Calculate similarities using distance function . . .')
             similarities = calc_distance(features, shape_features)
 
             print("Retrieving and showing similar shapes")
@@ -127,6 +127,7 @@ if __name__ == "__main__":
         # Step 5: Scalable querying -----------------------------------------------
 
         if s.USE_KNN:
+            print("Calculating similar using KNN . . .")
             # Calculate nearest neighbors via ANN and K-Nearest Neighbors
             neighbors = k_neighbors(shape_features, features)
             n_shapes_id, n_distances = neighbors[0][1:], neighbors[1][1:]
@@ -149,6 +150,7 @@ if __name__ == "__main__":
             visualize(n_shapes)
 
         if s.USE_RNN:
+            print("Calculating similar using RNN . . .")
             # Calculate nearest neighbors via ANN and R-Nearest Neighbors
             neighbors = r_neighbors(shape_features, features)
             n_shapes_id, n_distances = neighbors[0][1:], neighbors[1][1:]
@@ -173,5 +175,6 @@ if __name__ == "__main__":
 
     # Show Dimensionality reduction graphs
     if s.DISPLAY_TSNE:
+        print("Dimensionality reduction using TSNE")
         features_arr, labels_arr = convert_dict_to_arr(features, labels)
         tsne_plot(features_arr, labels_arr)

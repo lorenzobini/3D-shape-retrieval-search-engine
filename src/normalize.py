@@ -1,12 +1,12 @@
 import open3d as o3d
 import trimesh
 
-from src.utils import *
-from src.shape import Shape
-from src.settings import Settings
-# from shape import Shape
-# from utils import *
-# from settings import Settings
+# from src.utils import *
+# from src.shape import Shape
+# from src.settings import Settings
+from shape import Shape
+from utils import *
+from settings import Settings
 
 s = Settings()
 

@@ -3,10 +3,11 @@ import random
 import warnings
 import os
 from scipy import spatial
-# from utils import *
-# from settings import Settings
-from src.utils import *
-from src.settings import Settings
+from utils import *
+from settings import Settings
+
+# from src.utils import *
+# from src.settings import Settings
 
 s = Settings()
 
@@ -66,6 +67,7 @@ def calculate_single_shape_metrics(shape: Shape) -> {}:
     features = {}
 
     # calculate the default metrics
+    print("Calculating numeric features . . .")
     features["volume"] = volume(shape)
     features["area"] = area(shape)
     features["bbox_volume"] = bbox_volume(shape)
@@ -241,6 +243,7 @@ def calc_distributions(shape: Shape) -> {}:
     vertices = random.sample(list(shape.get_vertices()), k=150)
 
     # Computing A3, D3, D4 ---------------
+    print("Computing A3, D3, D4 . . . ")
     verticesOne = vertices[:50]
     verticesTwo = vertices[50:100]
     verticesThree = vertices[100:]

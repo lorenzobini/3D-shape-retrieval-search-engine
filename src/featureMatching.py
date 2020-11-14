@@ -5,12 +5,12 @@ import trimesh as trm
 from scipy.spatial import distance
 from scipy.stats import wasserstein_distance
 
-# from shape import Shape
-# from utils import flatten_features_array, read_off
-# from settings import Settings
-from src.utils import flatten_features_array, read_off
-from src.shape import Shape
-from src.settings import Settings
+from shape import Shape
+from utils import flatten_features_array, read_off
+from settings import Settings
+# from src.utils import flatten_features_array, read_off
+# from src.shape import Shape
+# from src.settings import Settings
 
 s = Settings()
 
