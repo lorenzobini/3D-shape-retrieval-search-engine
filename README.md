@@ -1,10 +1,9 @@
-# INFOMR_system
+# 3D Shape Retrieval Search Engine
 
-> Created by:  
-> Lars van Asseldonk (*6970907*) \
-> Lorenzo Bini (*6924093*) \
-> Lisa Salomons (*6951864*) \
-> In fulfilment or the requirements of the INFOMR course at Utrecht University.
+> Created by: 
+> Lorenzo Bini \
+> Lars van Asseldonk \
+> Lisa Salomons \
 
 ## Getting Started
 Create a folder called "data" in `C:\Users\User\..`, make sure this data folder contains the Princeton shape benchmark dataset and a folder called cache, that contains a folder called processed_data. 
