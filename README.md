@@ -1,9 +1,9 @@
 # 3D Shape Retrieval Search Engine
 
-> Created by: 
+## Authors: 
 > Lorenzo Bini \
 > Lars van Asseldonk \
-> Lisa Salomons \
+> Lisa Salomons 
 
 ## Getting Started
 Create a folder called "data" in `C:\Users\User\..`, make sure this data folder contains the Princeton shape benchmark dataset and a folder called cache, that contains a folder called processed_data. 
